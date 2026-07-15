@@ -20,5 +20,5 @@ func NewMobile(fsys fs.FS) (*Mobile, error) {
 
 // Parse runs the generic device flow directly.
 func (p *Mobile) Parse(ua string) (*Result, error) {
-	return p.base.parse(ua)
+	return p.parse(ua)
 }

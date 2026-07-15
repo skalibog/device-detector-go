@@ -297,7 +297,7 @@ func (p *preMatchParser) Parse(ua string) (*Result, error) {
 		return nil, nil
 	}
 
-	return p.base.parse(ua)
+	return p.parse(ua)
 }
 
 // All returns the device parsers in the exact order DeviceDetector tries them

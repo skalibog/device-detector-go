@@ -33,5 +33,5 @@ func (p *Notebook) Parse(ua string) (*Result, error) {
 		return nil, nil
 	}
 
-	return p.base.parse(ua)
+	return p.parse(ua)
 }

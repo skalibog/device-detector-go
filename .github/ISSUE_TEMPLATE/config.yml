@@ -1,0 +1,9 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Wrong / missing detection for a user agent
+    url: https://github.com/matomo-org/device-detector/issues
+    about: >
+      Detection data lives upstream in matomo/device-detector. If a UA is
+      misdetected there too, report it upstream — the fix reaches this port
+      with the next database sync. If upstream PHP parses it correctly and
+      this port does not, open a "Port bug" here instead.

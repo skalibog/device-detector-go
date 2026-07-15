@@ -37,7 +37,7 @@ func (p *ShellTv) Parse(ua string) (*Result, error) {
 		return nil, nil
 	}
 
-	res, err := p.base.parse(ua)
+	res, err := p.parse(ua)
 	if err != nil {
 		return nil, err
 	}
