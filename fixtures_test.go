@@ -12,7 +12,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/skalibog/devicedetector/parser"
+	"github.com/skalibog/device-detector-go/parser"
 )
 
 // flexString decodes any YAML scalar as its literal source text, so that

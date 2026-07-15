@@ -10,7 +10,20 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-07-15
+## [0.1.1] - 2026-07-15
+
+### Changed
+
+- Module path renamed to `github.com/skalibog/device-detector-go` (repository rename).
+- Added pkg.go.dev documentation: extended package docs, runnable examples.
+- golangci-lint config with enforced godoc on exported identifiers.
+
+### Removed
+
+- **v0.1.0 is retracted**: it was tagged before the repository rename and
+  declares the old module path, so it cannot be fetched. Use v0.1.1.
+
+## [0.1.0] - 2026-07-15 [RETRACTED]
 
 ### Added
 
@@ -30,5 +43,6 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 - Client Hints are not yet supported; hints-dependent fixture entries are
   excluded from the corpus gate until v0.2.
 
-[Unreleased]: https://github.com/skalibog/devicedetector/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/skalibog/devicedetector/releases/tag/v0.1.0
+[Unreleased]: https://github.com/skalibog/device-detector-go/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/skalibog/device-detector-go/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/skalibog/device-detector-go/releases/tag/v0.1.0

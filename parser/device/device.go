@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/skalibog/devicedetector/parser"
+	"github.com/skalibog/device-detector-go/parser"
 )
 
 // Device type identifiers, mirroring AbstractDeviceParser::DEVICE_TYPE_*.

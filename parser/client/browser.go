@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/skalibog/devicedetector/parser"
+	"github.com/skalibog/device-detector-go/parser"
 )
 
 // browserEngine mirrors the "engine" mapping of a browsers.yml entry.

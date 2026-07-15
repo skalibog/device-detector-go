@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/skalibog/devicedetector/parser"
+	"github.com/skalibog/device-detector-go/parser"
 	"gopkg.in/yaml.v3"
 )
 

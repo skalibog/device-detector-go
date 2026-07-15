@@ -7,7 +7,7 @@ package client
 import (
 	"io/fs"
 
-	"github.com/skalibog/devicedetector/parser"
+	"github.com/skalibog/device-detector-go/parser"
 )
 
 // Result holds a detected client. Engine, EngineVersion, Family and ShortName

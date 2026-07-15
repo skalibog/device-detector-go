@@ -1,11 +1,11 @@
 # devicedetector
 
-[![CI](https://github.com/skalibog/devicedetector/actions/workflows/ci.yml/badge.svg)](https://github.com/skalibog/devicedetector/actions/workflows/ci.yml)
-[![Go Reference](https://pkg.go.dev/badge/github.com/skalibog/devicedetector.svg)](https://pkg.go.dev/github.com/skalibog/devicedetector)
-[![Go Report Card](https://goreportcard.com/badge/github.com/skalibog/devicedetector)](https://goreportcard.com/report/github.com/skalibog/devicedetector)
+[![CI](https://github.com/skalibog/device-detector-go/actions/workflows/ci.yml/badge.svg)](https://github.com/skalibog/device-detector-go/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/skalibog/device-detector-go.svg)](https://pkg.go.dev/github.com/skalibog/device-detector-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/skalibog/device-detector-go)](https://goreportcard.com/report/github.com/skalibog/device-detector-go)
 [![Upstream fixtures](https://img.shields.io/badge/upstream_fixtures-36%2C333_%2F_100%25-brightgreen)](#validation)
 [![Coverage](https://img.shields.io/badge/coverage-83%25-green)](#validation)
-[![Go version](https://img.shields.io/github/go-mod/go-version/skalibog/devicedetector)](go.mod)
+[![Go version](https://img.shields.io/github/go-mod/go-version/skalibog/device-detector-go)](go.mod)
 [![License: LGPL-3.0-or-later](https://img.shields.io/badge/license-LGPL--3.0--or--later-blue)](LICENSE)
 
 A native Go port of [matomo/device-detector](https://github.com/matomo-org/device-detector) — the Universal Device Detection library. Parses any User Agent string and detects the browser, operating system, device type (desktop, tablet, mobile, tv, cars, console, etc.), brand and model.
@@ -22,7 +22,7 @@ This is an **unofficial, AI-assisted port** translated directly from the PHP sou
 ## Install
 
 ```bash
-go get github.com/skalibog/devicedetector
+go get github.com/skalibog/device-detector-go
 ```
 
 ## Quick start
@@ -33,7 +33,7 @@ package main
 import (
 	"fmt"
 
-	dd "github.com/skalibog/devicedetector"
+	dd "github.com/skalibog/device-detector-go"
 )
 
 func main() {

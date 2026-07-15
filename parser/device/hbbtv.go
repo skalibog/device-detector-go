@@ -3,7 +3,7 @@ package device
 import (
 	"io/fs"
 
-	"github.com/skalibog/devicedetector/parser"
+	"github.com/skalibog/device-detector-go/parser"
 )
 
 // hbbTvRegex detects HbbTV / SmartTvA fragments (Parser\Device\HbbTv::isHbbTv).

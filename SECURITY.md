@@ -9,6 +9,6 @@ Only the latest release receives fixes.
 Please do not open public issues for security problems (e.g. patterns causing
 catastrophic regex backtracking / denial of service on attacker-controlled UAs).
 
-Report privately via [GitHub Security Advisories](https://github.com/skalibog/devicedetector/security/advisories/new).
+Report privately via [GitHub Security Advisories](https://github.com/skalibog/device-detector-go/security/advisories/new).
 You will get a response within a week. Issues in the regex database itself may
 need to be coordinated with upstream matomo/device-detector.

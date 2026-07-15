@@ -1,9 +1,7 @@
-// Package devicedetector is a native Go port of matomo/device-detector,
-// the Universal Device Detection library.
-//
 // This port is a derivative work of matomo/device-detector
 // (https://github.com/matomo-org/device-detector), Copyright (C) Matomo Team,
 // and is licensed under LGPL-3.0-or-later.
+
 package devicedetector
 
 import (

@@ -5,8 +5,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/skalibog/devicedetector/parser"
-	"github.com/skalibog/devicedetector/parser/device"
+	"github.com/skalibog/device-detector-go/parser"
+	"github.com/skalibog/device-detector-go/parser/device"
 )
 
 func newDetector(t *testing.T, opts ...Option) *DeviceDetector {

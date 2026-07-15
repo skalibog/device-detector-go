@@ -10,9 +10,9 @@ import (
 
 	"github.com/dlclark/regexp2"
 
-	"github.com/skalibog/devicedetector/parser"
-	"github.com/skalibog/devicedetector/parser/client"
-	"github.com/skalibog/devicedetector/parser/device"
+	"github.com/skalibog/device-detector-go/parser"
+	"github.com/skalibog/device-detector-go/parser/client"
+	"github.com/skalibog/device-detector-go/parser/device"
 )
 
 // Unknown is the value PHP DeviceDetector reports for unknown attributes.
