@@ -7,7 +7,7 @@ test:
 	go test ./...
 
 test-fixtures:
-	go test -run TestFixtures -v .
+	go test -run TestFixtures -timeout 60m -v .
 
 vet:
 	go vet ./...

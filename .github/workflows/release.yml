@@ -16,7 +16,7 @@ jobs:
         with:
           go-version: "1.24"
       - name: Gate on full corpus
-        run: go test -count=1 -run TestFixtures .
+        run: go test -count=1 -run TestFixtures -timeout 60m .
       - name: Extract changelog section
         run: |
           TAG="${GITHUB_REF_NAME#v}"

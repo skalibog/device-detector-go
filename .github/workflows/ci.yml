@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   pull_request:
 
 concurrency:
@@ -39,7 +39,9 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: Unit tests (race)
-        run: go test -race -short -count=1 ./...
+        # The fixture corpus is excluded here: it has its own non-race job,
+        # and under the race detector it exceeds hosted-runner budgets.
+        run: go test -race -short -count=1 -skip TestFixtures -timeout 20m ./...
 
   fixtures:
     name: Upstream fixture corpus
@@ -49,11 +51,11 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
-      - name: Full corpus (36,333 entries, zero-mismatch gate)
-        run: go test -count=1 -run TestFixtures -v .
-      - name: Coverage
+      - name: Full corpus (36,333 entries, zero-mismatch gate) + coverage
+        # Hosted runners are far slower than dev machines; go test's default
+        # 10m timeout is not enough for the 36k-entry corpus.
         run: |
-          go test -count=1 -coverpkg=./... -coverprofile=coverage.out ./...
+          go test -count=1 -coverpkg=./... -coverprofile=coverage.out -timeout 60m ./...
           go tool cover -func=coverage.out | tail -1
       - uses: actions/upload-artifact@v4
         with:
