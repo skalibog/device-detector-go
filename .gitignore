@@ -1,0 +1,8 @@
+bin/
+*.log
+.idea/
+.vscode/
+*.test
+coverage.out
+/upstream/
+.claude/
