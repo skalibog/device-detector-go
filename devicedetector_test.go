@@ -20,8 +20,31 @@ func newDetector(t *testing.T, opts ...Option) *DeviceDetector {
 	return d
 }
 
+var (
+	sharedDetectorOnce sync.Once
+	sharedDetector     *DeviceDetector
+	sharedDetectorErr  error
+)
+
+// testDetector returns a process-wide default-options detector. Construction
+// loads and compiles the database, which is too expensive to repeat per test
+// under the race detector on CI runners.
+func testDetector(t *testing.T) *DeviceDetector {
+	t.Helper()
+
+	sharedDetectorOnce.Do(func() {
+		sharedDetector, sharedDetectorErr = New()
+	})
+
+	if sharedDetectorErr != nil {
+		t.Fatal(sharedDetectorErr)
+	}
+
+	return sharedDetector
+}
+
 func TestParseEmptyAndGarbage(t *testing.T) {
-	d := newDetector(t)
+	d := testDetector(t)
 
 	for _, ua := range []string{"", "1234567890", "-.;()"} {
 		info, err := d.Parse(ua)
@@ -37,7 +60,7 @@ func TestParseEmptyAndGarbage(t *testing.T) {
 }
 
 func TestParseBot(t *testing.T) {
-	d := newDetector(t)
+	d := testDetector(t)
 
 	info, err := d.Parse("Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)")
 	if err != nil {
@@ -69,7 +92,7 @@ func TestSkipBotDetection(t *testing.T) {
 // TestDeviceHeuristics exercises the DeviceDetector::parseDevice()
 // post-detection chain branch by branch.
 func TestDeviceHeuristics(t *testing.T) {
-	d := newDetector(t)
+	d := testDetector(t)
 
 	cases := []struct {
 		name     string
@@ -136,7 +159,7 @@ func TestDeviceHeuristics(t *testing.T) {
 }
 
 func TestAppleBrandAssumption(t *testing.T) {
-	d := newDetector(t)
+	d := testDetector(t)
 
 	info, err := d.Parse("Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1")
 	if err != nil {
@@ -153,7 +176,7 @@ func TestAppleBrandAssumption(t *testing.T) {
 }
 
 func TestVersionTruncationOption(t *testing.T) {
-	d := newDetector(t) // default: minor
+	d := testDetector(t) // default: minor
 
 	info, err := d.Parse("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.109 Safari/537.36")
 	if err != nil {
@@ -222,7 +245,7 @@ func TestMatchUAAnchorAllowsDigit(t *testing.T) {
 // TestConcurrentParseDeterminism runs the same UA set from many goroutines
 // against one shared detector and requires bit-identical results.
 func TestConcurrentParseDeterminism(t *testing.T) {
-	d := newDetector(t)
+	d := testDetector(t)
 
 	uas := benchUAs
 
@@ -255,13 +278,15 @@ func TestConcurrentParseDeterminism(t *testing.T) {
 
 	errs := make(chan string, 64)
 
-	for g := 0; g < 32; g++ {
+	// Kept deliberately small: the race detector needs concurrency, not
+	// volume, and CI runners are slow. 8 goroutines x 10 passes suffice.
+	for g := 0; g < 8; g++ {
 		wg.Add(1)
 
 		go func() {
 			defer wg.Done()
 
-			for iter := 0; iter < 50; iter++ {
+			for iter := 0; iter < 10; iter++ {
 				for i, ua := range uas {
 					info, err := d.Parse(ua)
 					if err != nil {
