@@ -78,6 +78,10 @@ func (p *genericParser) SetVersionTruncation(t int) { p.truncation = t }
 
 // Parse mirrors AbstractClientParser::parse().
 func (p *genericParser) Parse(ua string) (*Result, error) {
+	if parser.PreMatchEmpty(p.overall) {
+		return nil, nil
+	}
+
 	overall, err := parser.MatchUserAgent(ua, p.overall)
 	if err != nil {
 		return nil, err

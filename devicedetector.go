@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/dlclark/regexp2"
 
@@ -17,6 +18,12 @@ import (
 
 // Unknown is the value PHP DeviceDetector reports for unknown attributes.
 const Unknown = "UNK"
+
+// DefaultMaxUARawLength bounds attacker-controlled input: user agents longer
+// than this are truncated before parsing. The longest real user agent in the
+// upstream corpus is ~400 bytes, so this never affects genuine traffic while
+// capping the cost of oversized junk. Override with WithMaxUARawLength.
+const DefaultMaxUARawLength = 2048
 
 // DeviceDetector parses user agent strings. It is immutable after
 // construction and safe for concurrent use.
@@ -29,6 +36,7 @@ type DeviceDetector struct {
 
 	skipBotDetection bool
 	truncation       int
+	maxUALen         int
 }
 
 // Option configures a DeviceDetector.
@@ -47,6 +55,25 @@ func WithSkipBotDetection() Option {
 	return func(d *DeviceDetector) { d.skipBotDetection = true }
 }
 
+// WithMaxUARawLength truncates user agents longer than n bytes before parsing,
+// bounding the cost of oversized attacker input. n <= 0 disables truncation
+// (exact upstream parity, which imposes no limit). Defaults to
+// DefaultMaxUARawLength.
+func WithMaxUARawLength(n int) Option {
+	return func(d *DeviceDetector) { d.maxUALen = n }
+}
+
+// WithMatchTimeout bounds how long any single regex match may run before it is
+// abandoned, protecting against catastrophic backtracking on crafted input;
+// d <= 0 disables it. See DefaultMatchTimeout.
+//
+// The regex cache is process-wide, so this setting is process-global rather
+// than per-detector: a pattern keeps the timeout in effect when it was first
+// compiled. Set it consistently, before constructing your first detector.
+func WithMatchTimeout(d time.Duration) Option {
+	return func(*DeviceDetector) { parser.SetMatchTimeout(d) }
+}
+
 // New creates a detector backed by the embedded regex database.
 func New(opts ...Option) (*DeviceDetector, error) {
 	return NewFromFS(EmbeddedRegexes(), opts...)
@@ -60,7 +87,7 @@ func NewFromDir(dir string, opts ...Option) (*DeviceDetector, error) {
 
 // NewFromFS creates a detector loading the regex database from fsys.
 func NewFromFS(fsys fs.FS, opts ...Option) (*DeviceDetector, error) {
-	d := &DeviceDetector{truncation: parser.VersionTruncationMinor}
+	d := &DeviceDetector{truncation: parser.VersionTruncationMinor, maxUALen: DefaultMaxUARawLength}
 
 	for _, opt := range opts {
 		opt(d)
@@ -200,8 +227,13 @@ func (i *Info) IsMobile() bool {
 var hasLetterRe = regexp.MustCompile(`[a-zA-Z]`)
 
 // Parse runs the full detection pipeline on ua, mirroring
-// DeviceDetector::parse().
+// DeviceDetector::parse(). User agents longer than the configured maximum are
+// truncated first (see WithMaxUARawLength).
 func (d *DeviceDetector) Parse(ua string) (*Info, error) {
+	if d.maxUALen > 0 && len(ua) > d.maxUALen {
+		ua = ua[:d.maxUALen]
+	}
+
 	info := &Info{UserAgent: ua, deviceType: device.TypeUnknown}
 
 	if ua == "" || !hasLetterRe.MatchString(ua) {
@@ -439,6 +471,7 @@ func matchUA(ua, pattern string) bool {
 			return false
 		}
 
+		parser.StampTimeout(re)
 		ddRegexCache.Store(pattern, re)
 		cached = re
 	}

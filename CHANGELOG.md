@@ -10,6 +10,35 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-07-18
+
+### Security
+
+- Bound denial-of-service on crafted user agents. The backtracking engine could
+  be pinned for tens of seconds by an oversized junk UA (a ~24 KB input held one
+  core for ~60 s). Two guards are now on by default: a 2048-byte length cap
+  (`WithMaxUARawLength`) and a 1 s per-match timeout (`WithMatchTimeout`),
+  together bounding that input to ~1 s. See SECURITY.md for hardening untrusted
+  input. The durable RE2-prefilter fix is tracked in ROADMAP.md.
+
+### Fixed
+
+- Empty regex lists no longer match every user agent. A `preMatchOverall` regex
+  built from an empty list degraded into a bare anchor that matched everything
+  (upstream fix in matomo/device-detector 6.5.1, PR #8271). Individual empty
+  patterns keep their catch-all semantics (e.g. Roku's "Digital Video Player").
+
+### Added
+
+- `WithMaxUARawLength`, `WithMatchTimeout` options; `parser.SetMatchTimeout`.
+- `govulncheck` CI job (push/PR + weekly cron).
+- `ROADMAP.md`: the plan to v1.0.
+
+### Notes
+
+- Database unchanged: matomo/device-detector `6f07f615`.
+- Non-breaking: the new guards only affect oversized or pathological input.
+
 ## [0.1.1] - 2026-07-15
 
 ### Changed
@@ -43,6 +72,7 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 - Client Hints are not yet supported; hints-dependent fixture entries are
   excluded from the corpus gate until v0.2.
 
-[Unreleased]: https://github.com/skalibog/device-detector-go/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/skalibog/device-detector-go/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/skalibog/device-detector-go/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/skalibog/device-detector-go/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/skalibog/device-detector-go/releases/tag/v0.1.0

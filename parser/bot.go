@@ -59,7 +59,14 @@ func NewBot(fsys fs.FS) (*Bot, error) {
 		patterns[i] = entries[i].Regex
 	}
 
-	overall, err := Compile(CombineRegexes(patterns))
+	combined := CombineRegexes(patterns)
+	if PreMatchEmpty(combined) {
+		// No bot regexes: nothing can be a bot. Leave overall nil so Parse
+		// short-circuits rather than compiling a match-everything anchor.
+		return &Bot{entries: entries}, nil
+	}
+
+	overall, err := Compile(combined)
 	if err != nil {
 		return nil, fmt.Errorf("devicedetector: compiling combined bot regex: %w", err)
 	}
@@ -73,6 +80,10 @@ func NewBot(fsys fs.FS) (*Bot, error) {
 // The detection first tests the combined regex (a fast rejection for the common
 // non-bot case) and only then walks the individual entries in file order.
 func (b *Bot) Parse(ua string) (*BotResult, error) {
+	if b.overall == nil {
+		return nil, nil
+	}
+
 	pre, err := matchWith(b.overall, ua)
 	if err != nil {
 		return nil, err
@@ -107,6 +118,10 @@ func (b *Bot) Parse(ua string) (*BotResult, error) {
 // mirroring Parser\Bot with discardDetails enabled: only the combined regex is
 // evaluated.
 func (b *Bot) IsBot(ua string) (bool, error) {
+	if b.overall == nil {
+		return false, nil
+	}
+
 	pre, err := matchWith(b.overall, ua)
 	if err != nil {
 		return false, err
