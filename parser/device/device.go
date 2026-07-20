@@ -288,6 +288,10 @@ func newPreMatch(fsys fs.FS, name, file string) (preMatchParser, error) {
 
 // Parse runs the combined pre-match before delegating to the generic flow.
 func (p *preMatchParser) Parse(ua string) (*Result, error) {
+	if parser.PreMatchEmpty(p.combined) {
+		return nil, nil
+	}
+
 	m, err := parser.MatchUserAgent(ua, p.combined)
 	if err != nil {
 		return nil, err

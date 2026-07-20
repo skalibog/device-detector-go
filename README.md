@@ -88,9 +88,12 @@ The port keeps upstream's design: a big regex alternation walked with a backtrac
 
 Measured on the full diverse corpus (32 workers, warm caches): ~640 parses/sec sustained, from ~1.5 ms for early-exit UAs (bots, desktops) up to tens of ms for long-tail mobile UAs. Detector heap footprint is ~50 MB warm, ~110 MB with every model regex lazily compiled (bounded by database size — it is a cache, not a leak).
 
+Because the engine backtracks, oversized crafted user agents can be expensive. Two guards are on by default (see [SECURITY.md](SECURITY.md)): a 2048-byte length cap (`WithMaxUARawLength`) and a 1 s per-match timeout (`WithMatchTimeout`), which together bound a ~24 KB junk input from ~60 s to ~1 s without affecting genuine traffic.
+
 Recommendations for high-volume callers:
 
 - **Cache results by UA hash** — real traffic repeats UAs heavily; a small LRU in front removes nearly all parse cost.
+- **For untrusted input**, tighten the guards (e.g. `WithMaxUARawLength(512)`, `WithMatchTimeout(100*time.Millisecond)`).
 - A performance pass (RE2 prefilter fast-path for the common alternations) is on the roadmap.
 
 ## Data provenance and updates
