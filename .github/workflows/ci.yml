@@ -57,7 +57,7 @@ jobs:
         run: |
           go test -count=1 -coverpkg=./... -coverprofile=coverage.out -timeout 60m ./...
           go tool cover -func=coverage.out | tail -1
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: coverage.out
