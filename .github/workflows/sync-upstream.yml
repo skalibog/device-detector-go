@@ -27,7 +27,7 @@ jobs:
         run: go test -count=1 -run TestFixtures -v . 2>&1 | tail -20
         continue-on-error: true
       - name: Open PR
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: sync/upstream-regexes
           title: "Sync regex database from matomo/device-detector"
