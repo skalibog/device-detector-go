@@ -31,6 +31,7 @@ var availableEngines = []string{
 	"Arachne",
 	"LibWeb",
 	"Maple",
+	"ArkWeb",
 }
 
 type engineEntry struct {

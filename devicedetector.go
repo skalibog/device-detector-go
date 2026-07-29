@@ -480,6 +480,7 @@ func (d *DeviceDetector) parseDevice(info *Info) error {
 	tvClients := []string{
 		"Kylo", "Espial TV Browser", "LUJO TV Browser", "LogicUI TV Browser", "Open TV Browser", "Seraphic Sraf",
 		"Opera Devices", "Crow Browser", "Vewd Browser", "TiviMate", "Quick Search TV", "QJY TV Browser", "TV Bro",
+		"Redline",
 	}
 	if contains(tvClients, clientName) {
 		info.deviceType = DeviceTypeTV

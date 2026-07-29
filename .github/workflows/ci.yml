@@ -69,7 +69,7 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: "1.24"
-      - name: Full corpus (36,333 entries, zero-mismatch gate) + coverage
+      - name: Full corpus (37,262 entries, zero-mismatch gate) + coverage
         # Hosted runners are far slower than dev machines; go test's default
         # 10m timeout is not enough for the 36k-entry corpus.
         run: |
