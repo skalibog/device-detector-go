@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	dd "github.com/skalibog/device-detector-go"
-	"github.com/skalibog/device-detector-go/parser"
 )
 
 func ExampleNew() {
@@ -46,7 +45,7 @@ func ExampleDeviceDetector_Parse_bot() {
 }
 
 func ExampleWithVersionTruncation() {
-	detector, err := dd.New(dd.WithVersionTruncation(parser.VersionTruncationNone))
+	detector, err := dd.New(dd.WithVersionTruncation(dd.VersionTruncationNone))
 	if err != nil {
 		panic(err)
 	}

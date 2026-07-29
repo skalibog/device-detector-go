@@ -5,8 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/skalibog/device-detector-go/parser"
-	"github.com/skalibog/device-detector-go/parser/device"
+	"github.com/skalibog/device-detector-go/internal/parser"
 )
 
 func newDetector(t *testing.T, opts ...Option) *DeviceDetector {
@@ -53,7 +52,7 @@ func TestParseEmptyAndGarbage(t *testing.T) {
 		}
 
 		if info.IsBot() || info.Client() != nil || info.OS() != nil ||
-			info.Device() != device.TypeUnknown || info.DeviceName() != "" {
+			info.DeviceType() != DeviceTypeUnknown || info.DeviceName() != "" {
 			t.Errorf("UA %q: expected fully-unknown result", ua)
 		}
 	}
@@ -97,37 +96,37 @@ func TestDeviceHeuristics(t *testing.T) {
 	cases := []struct {
 		name     string
 		ua       string
-		wantType int
+		wantType DeviceType
 	}{
 		{
 			"chrome android with Mobile keyword -> smartphone",
 			"Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
-			device.TypeSmartphone,
+			DeviceTypeSmartphone,
 		},
 		{
 			"chrome android without Mobile keyword -> tablet",
 			"Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-			device.TypeTablet,
+			DeviceTypeTablet,
 		},
 		{
 			"android mobile fragment -> smartphone",
 			"Mozilla/5.0 (Android; Mobile; rv:40.0) Gecko/40.0 Firefox/40.0",
-			device.TypeSmartphone,
+			DeviceTypeSmartphone,
 		},
 		{
 			"windows RT touch -> tablet",
 			"Mozilla/5.0 (Windows NT 6.2; ARM; Trident/6.0; Touch; rv:11.0) like Gecko",
-			device.TypeTablet,
+			DeviceTypeTablet,
 		},
 		{
 			"KaiOS -> feature phone",
 			"Mozilla/5.0 (Mobile; LYF/F41t/LYF-F41t-000-02-24-130318;Android;rv:48.0) Gecko/48.0 Firefox/48.0 KAIOS/2.5",
-			device.TypeFeaturePhone,
+			DeviceTypeFeaturePhone,
 		},
 		{
 			"desktop os fallback -> desktop",
 			"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
-			device.TypeDesktop,
+			DeviceTypeDesktop,
 		},
 		{
 			// Regression: DeviceDetector::matchUserAgent() allows a digit
@@ -135,12 +134,12 @@ func TestDeviceHeuristics(t *testing.T) {
 			// stricter parser anchor.
 			"trailing TV token after digit -> tv",
 			"Mozilla/5.0 (Linux; Android 13; AKAI_TA43BU500 Build/TP1A.220905.004.A2; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/101.0.4951.61 YaBrowser/23.1.0.39 (lite) Safari/537.36 TV",
-			device.TypeTV,
+			DeviceTypeTV,
 		},
 		{
 			"Opera TV Store -> tv",
 			"Mozilla/5.0 (Linux; U) AppleWebKit/538.1 (KHTML, like Gecko) Opera TV Store Safari/538.1",
-			device.TypeTV,
+			DeviceTypeTV,
 		},
 	}
 
@@ -151,8 +150,8 @@ func TestDeviceHeuristics(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if info.Device() != c.wantType {
-				t.Errorf("device type = %q, want %q", info.DeviceName(), device.TypeName(c.wantType))
+			if info.DeviceType() != c.wantType {
+				t.Errorf("device type = %q, want %q", info.DeviceName(), c.wantType.String())
 			}
 		})
 	}
@@ -166,7 +165,7 @@ func TestAppleBrandAssumption(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if info.Brand() != "Apple" || info.Device() != device.TypeSmartphone {
+	if info.Brand() != "Apple" || info.DeviceType() != DeviceTypeSmartphone {
 		t.Errorf("expected Apple smartphone, got brand=%q type=%q", info.Brand(), info.DeviceName())
 	}
 
@@ -187,7 +186,7 @@ func TestVersionTruncationOption(t *testing.T) {
 		t.Errorf("default truncation: version = %q, want 120.0", got)
 	}
 
-	full := newDetector(t, WithVersionTruncation(parser.VersionTruncationNone))
+	full := newDetector(t, WithVersionTruncation(VersionTruncationNone))
 
 	info, err = full.Parse("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.109 Safari/537.36")
 	if err != nil {
@@ -196,6 +195,21 @@ func TestVersionTruncationOption(t *testing.T) {
 
 	if got := info.Client().Version; got != "120.0.6099.109" {
 		t.Errorf("truncation none: version = %q, want 120.0.6099.109", got)
+	}
+}
+
+func TestInvalidVersionTruncationIgnored(t *testing.T) {
+	// An out-of-range truncation must be ignored (default minor kept) and must
+	// never panic during Parse — guards the parser.BuildVersion slice bound.
+	d := newDetector(t, WithVersionTruncation(VersionTruncation(-2)))
+
+	info, err := d.Parse("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.109 Safari/537.36")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got := info.Client().Version; got != "120.0" {
+		t.Errorf("invalid truncation should keep default minor: version = %q, want 120.0", got)
 	}
 }
 

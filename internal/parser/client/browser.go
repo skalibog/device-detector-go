@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/skalibog/device-detector-go/parser"
+	"github.com/skalibog/device-detector-go/internal/parser"
 )
 
 // browserEngine mirrors the "engine" mapping of a browsers.yml entry.
@@ -93,6 +93,17 @@ func (b *Browser) Name() string { return "browser" }
 
 // SetVersionTruncation sets the version truncation level.
 func (b *Browser) SetVersionTruncation(t int) { b.truncation = t }
+
+// Warm compiles every browser entry regex and the engine regexes.
+func (b *Browser) Warm() error {
+	for i := range b.entries {
+		if _, err := parser.Compile(b.entries[i].Regex); err != nil {
+			return fmt.Errorf("client browser: compiling %q: %w", b.entries[i].Regex, err)
+		}
+	}
+
+	return b.engine.warm()
+}
 
 // Parse mirrors Browser::parse() on the pure user-agent path.
 func (b *Browser) Parse(ua string) (*Result, error) {

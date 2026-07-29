@@ -62,9 +62,11 @@ func main() {
 Options:
 
 ```go
-dd.New(dd.WithVersionTruncation(parser.VersionTruncationNone)) // full versions (default: minor)
-dd.New(dd.WithSkipBotDetection())                              // skip the bot stage
-dd.NewFromDir("path/to/regexes")                               // external regex database
+dd.New(dd.WithVersionTruncation(dd.VersionTruncationNone)) // full versions (default: minor)
+dd.New(dd.WithSkipBotDetection())                          // skip the bot stage
+dd.New(dd.WithMaxUARawLength(512))                         // tighter length cap (see SECURITY.md)
+dd.New(dd.WithLazyCompile())                               // defer compilation; faster New, no fail-fast
+dd.NewFromDir("path/to/regexes")                           // external regex database
 ```
 
 ## Result surface
@@ -74,7 +76,7 @@ dd.NewFromDir("path/to/regexes")                               // external regex
 | `info.IsBot()` / `info.Bot()` | bot name, category, URL, producer |
 | `info.Client()` | type (browser / mobile app / mediaplayer / feed reader / library / pim), name, version; engine + engine version for browsers |
 | `info.OS()` | name, short name, version, platform, family |
-| `info.Device()` / `info.DeviceName()` | device type (smartphone, tablet, tv, console, wearable, …) |
+| `info.DeviceType()` / `info.DeviceName()` | device type — typed `DeviceType` (matomo ids) / its name (smartphone, tablet, tv, …) |
 | `info.Brand()` / `info.Model()` | device brand and model |
 | `info.IsMobile()` / `info.IsDesktop()` / `info.IsTouchEnabled()` | convenience checks mirroring upstream |
 

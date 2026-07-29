@@ -43,6 +43,24 @@ jobs:
         # and under the race detector it exceeds hosted-runner budgets.
         run: go test -race -short -count=1 -skip TestFixtures -timeout 20m ./...
 
+  apidiff:
+    name: API compatibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # gorelease compares against the latest tag
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "stable"
+      - name: gorelease
+        # Informational until v1.0 (0.x may break the API in a minor release);
+        # flip to a hard gate once v1.0.0 ships.
+        continue-on-error: true
+        run: |
+          go install golang.org/x/exp/cmd/gorelease@latest
+          gorelease || true
+
   fixtures:
     name: Upstream fixture corpus
     runs-on: ubuntu-latest

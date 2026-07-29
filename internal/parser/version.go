@@ -36,7 +36,10 @@ func BuildVersion(versionString string, matches []string, truncation int) string
 	versionString = BuildByMatch(versionString, matches)
 	versionString = strings.ReplaceAll(versionString, "_", ".")
 
-	if truncation != VersionTruncationNone && strings.Count(versionString, ".") > truncation {
+	// truncation >= 0 covers the Major/Minor/Patch/Build levels; None (-1) and
+	// any other negative value skip truncation, so a stray negative can never
+	// produce a negative slice bound below.
+	if truncation >= 0 && strings.Count(versionString, ".") > truncation {
 		parts := strings.Split(versionString, ".")
 		versionString = strings.Join(parts[:1+truncation], ".")
 	}

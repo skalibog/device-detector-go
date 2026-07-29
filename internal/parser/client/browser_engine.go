@@ -5,7 +5,7 @@ import (
 	"io/fs"
 	"strings"
 
-	"github.com/skalibog/device-detector-go/parser"
+	"github.com/skalibog/device-detector-go/internal/parser"
 )
 
 // availableEngines mirrors Engine::$availableEngines: known browser engines in
@@ -56,6 +56,17 @@ func NewEngine(fsys fs.FS) (*Engine, error) {
 
 // detect mirrors Engine::parse(): it returns the canonical engine name, or an
 // empty string when no engine regex matches.
+// warm compiles every engine regex.
+func (e *Engine) warm() error {
+	for i := range e.entries {
+		if _, err := parser.Compile(e.entries[i].Regex); err != nil {
+			return fmt.Errorf("client engine: compiling %q: %w", e.entries[i].Regex, err)
+		}
+	}
+
+	return nil
+}
+
 func (e *Engine) detect(ua string) (string, error) {
 	var (
 		matches []string

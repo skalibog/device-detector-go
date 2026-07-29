@@ -6,7 +6,7 @@ import (
 )
 
 func TestParse(t *testing.T) {
-	fsys := os.DirFS("../../data/regexes")
+	fsys := os.DirFS("../../../data/regexes")
 
 	mobile, err := NewMobile(fsys)
 	if err != nil {
@@ -171,7 +171,7 @@ func TestParse(t *testing.T) {
 }
 
 func TestNoMatch(t *testing.T) {
-	fsys := os.DirFS("../../data/regexes")
+	fsys := os.DirFS("../../../data/regexes")
 
 	console, err := NewConsole(fsys)
 	if err != nil {
@@ -230,7 +230,7 @@ func TestTypeNameRoundTrip(t *testing.T) {
 }
 
 func TestAllOrder(t *testing.T) {
-	fsys := os.DirFS("../../data/regexes")
+	fsys := os.DirFS("../../../data/regexes")
 
 	all, err := All(fsys)
 	if err != nil {

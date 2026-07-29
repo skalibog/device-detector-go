@@ -34,7 +34,7 @@
 //
 // By default reported versions are truncated to minor precision ("17.4"),
 // matching the upstream library. Pass [WithVersionTruncation] with a
-// parser.VersionTruncation* constant to change that.
+// [VersionTruncation] constant to change that.
 //
 // # Detection data
 //
@@ -43,7 +43,6 @@
 // this package. See the repository README for provenance details and the
 // database update workflow.
 //
-// The subpackages parser, parser/client and parser/device contain the
-// individual detection stages; most applications only need this root
-// package.
+// The detection stages live under internal/ and are not part of the public
+// API; everything a caller needs is in this package.
 package devicedetector

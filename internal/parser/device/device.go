@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/skalibog/device-detector-go/parser"
+	"github.com/skalibog/device-detector-go/internal/parser"
 )
 
 // Device type identifiers, mirroring AbstractDeviceParser::DEVICE_TYPE_*.
@@ -111,6 +111,9 @@ type Parser interface {
 	Parse(ua string) (*Result, error)
 	// Name returns the parser's internal name.
 	Name() string
+	// Warm eagerly compiles every brand and model regex so a broken pattern
+	// surfaces at construction rather than at first match.
+	Warm() error
 }
 
 // deviceModel is one entry of a brand's "models" list.
@@ -149,6 +152,24 @@ func loadBase(fsys fs.FS, name, file string) (base, error) {
 
 // Name returns the internal parser name (AbstractParser::getName()).
 func (b *base) Name() string { return b.name }
+
+// Warm compiles every brand regex and every model regex.
+func (b *base) Warm() error {
+	for i := range b.regexes.Entries {
+		e := &b.regexes.Entries[i].Value
+		if _, err := parser.Compile(e.Regex); err != nil {
+			return fmt.Errorf("device %s: compiling %q: %w", b.name, e.Regex, err)
+		}
+
+		for j := range e.Models {
+			if _, err := parser.Compile(e.Models[j].Regex); err != nil {
+				return fmt.Errorf("device %s: compiling model %q: %w", b.name, e.Models[j].Regex, err)
+			}
+		}
+	}
+
+	return nil
+}
 
 // combinedRegex builds the AbstractParser::preMatchOverall() alternation of all
 // top-level brand regexes, reversed so the generic entries match first.
