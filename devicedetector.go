@@ -169,6 +169,7 @@ type Info struct {
 	deviceType DeviceType
 	brand      string
 	model      string
+	chMobile   bool
 }
 
 // IsBot reports whether the UA was identified as a bot.
@@ -234,6 +235,10 @@ func (i *Info) IsDesktop() bool {
 
 // IsMobile mirrors DeviceDetector::isMobile().
 func (i *Info) IsMobile() bool {
+	if i.chMobile {
+		return true
+	}
+
 	switch i.deviceType {
 	case DeviceTypeFeaturePhone, DeviceTypeSmartphone, DeviceTypeTablet,
 		DeviceTypePhablet, DeviceTypeCamera, DeviceTypePortableMediaPlayer:
@@ -274,13 +279,26 @@ func (d *DeviceDetector) IsBot(ua string) (bool, error) {
 // DeviceDetector::parse(). User agents longer than the configured maximum are
 // truncated first (see WithMaxUARawLength).
 func (d *DeviceDetector) Parse(ua string) (*Info, error) {
+	return d.parse(ua, nil)
+}
+
+// ParseWithHints runs detection using both the user agent and HTTP client
+// hints. Build the hints with [NewClientHintsFromHeaders] (from an
+// http.Request) or [NewClientHintsFromMap]. Passing nil is equivalent to
+// [DeviceDetector.Parse].
+func (d *DeviceDetector) ParseWithHints(ua string, hints *ClientHints) (*Info, error) {
+	return d.parse(ua, hints)
+}
+
+func (d *DeviceDetector) parse(ua string, hints *ClientHints) (*Info, error) {
 	if d.maxUALen > 0 && len(ua) > d.maxUALen {
 		ua = ua[:d.maxUALen]
 	}
 
-	info := &Info{UserAgent: ua, deviceType: DeviceTypeUnknown}
+	info := &Info{UserAgent: ua, deviceType: DeviceTypeUnknown, chMobile: hints.IsMobile()}
 
-	if ua == "" || !hasLetterRe.MatchString(ua) {
+	// Skip empty/letterless user agents only when there are no client hints.
+	if (ua == "" || !hasLetterRe.MatchString(ua)) && hints == nil {
 		return info, nil
 	}
 
@@ -301,7 +319,7 @@ func (d *DeviceDetector) Parse(ua string) (*Info, error) {
 		}
 	}
 
-	osResult, err := d.os.Parse(ua)
+	osResult, err := d.os.Parse(ua, hints)
 	if err != nil {
 		return info, err
 	}
@@ -309,7 +327,7 @@ func (d *DeviceDetector) Parse(ua string) (*Info, error) {
 	info.os = osFrom(osResult)
 
 	for _, p := range d.clientParsers {
-		res, err := p.Parse(ua)
+		res, err := p.Parse(ua, hints)
 		if err != nil {
 			return info, err
 		}
@@ -321,7 +339,7 @@ func (d *DeviceDetector) Parse(ua string) (*Info, error) {
 		}
 	}
 
-	if err := d.parseDevice(info); err != nil {
+	if err := d.parseDevice(info, hints); err != nil {
 		return info, err
 	}
 
@@ -330,11 +348,11 @@ func (d *DeviceDetector) Parse(ua string) (*Info, error) {
 
 // parseDevice mirrors DeviceDetector::parseDevice(), including the long
 // post-detection heuristics chain. Order of checks is load-bearing.
-func (d *DeviceDetector) parseDevice(info *Info) error {
+func (d *DeviceDetector) parseDevice(info *Info, hints *ClientHints) error {
 	ua := info.UserAgent
 
 	for _, p := range d.deviceParsers {
-		res, err := p.Parse(ua)
+		res, err := p.Parse(ua, hints)
 		if err != nil {
 			return err
 		}
@@ -346,6 +364,11 @@ func (d *DeviceDetector) parseDevice(info *Info) error {
 
 			break
 		}
+	}
+
+	// If no model came from the user agent, fall back to the client-hints model.
+	if hints != nil && info.model == "" {
+		info.model = hints.Model
 	}
 
 	if info.brand == "" {

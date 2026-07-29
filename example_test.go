@@ -59,3 +59,34 @@ func ExampleWithVersionTruncation() {
 	// Output:
 	// Chrome 120.0.6099.109
 }
+
+func ExampleDeviceDetector_ParseWithHints() {
+	detector, err := dd.New()
+	if err != nil {
+		panic(err)
+	}
+
+	// A frozen "Android 10; K" user agent, refined by client hints.
+	hints := dd.NewClientHintsFromMap(map[string]any{
+		"Sec-CH-UA-Platform":         "Android",
+		"Sec-CH-UA-Platform-Version": "13.0.0",
+		"Sec-CH-UA-Model":            "Pixel 8",
+		"Sec-CH-UA-Mobile":           "?1",
+	})
+
+	info, err := detector.ParseWithHints(
+		"Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36",
+		hints,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(info.OS().Name, info.OS().Version)
+	fmt.Println(info.Model())
+	fmt.Println(info.IsMobile())
+	// Output:
+	// Android 13.0
+	// Pixel 8
+	// true
+}

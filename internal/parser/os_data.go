@@ -274,12 +274,12 @@ var desktopOsArray = map[string]struct{}{
 	"Chrome OS": {},
 }
 
-// fireOsVersionMapping and lineageOsVersionMapping are only consulted from the
-// client-hints remaps, which are deferred to v0.2. They are transcribed here so
-// the data is ready when those branches are implemented.
-//
-//nolint:unused // consulted by the client-hints remaps, which land in v0.2
+// fireOsVersionMapping and lineageOsVersionMapping remap an Android version to
+// the Fire OS / Lineage OS version, consulted from the client-hints app remaps.
 var fireOsVersionMapping = map[string]string{
+	"14":    "14",
+	"13":    "14",
+	"12":    "14",
 	"11":    "8",
 	"10":    "8",
 	"9":     "7",
@@ -294,8 +294,8 @@ var fireOsVersionMapping = map[string]string{
 	"2":     "1",
 }
 
-//nolint:unused // consulted by the client-hints remaps, which land in v0.2
 var lineageOsVersionMapping = map[string]string{
+	"16":    "23",
 	"15":    "22",
 	"14":    "21",
 	"13":    "20.0",

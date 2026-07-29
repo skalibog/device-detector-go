@@ -65,6 +65,7 @@ var cypressPhantomRegex = regexp.MustCompile(`Cypress|PhantomJS`)
 type Browser struct {
 	entries    []browserEntry
 	engine     *Engine
+	appHints   map[string]string // client/hints/browsers.yml: app id -> browser name
 	truncation int
 }
 
@@ -81,9 +82,15 @@ func NewBrowser(fsys fs.FS) (*Browser, error) {
 		return nil, err
 	}
 
+	var appHints map[string]string
+	if err := parser.Load(fsys, "client/hints/browsers.yml", &appHints); err != nil {
+		return nil, err
+	}
+
 	return &Browser{
 		entries:    entries,
 		engine:     engine,
+		appHints:   appHints,
 		truncation: parser.VersionTruncationMinor,
 	}, nil
 }
@@ -106,22 +113,106 @@ func (b *Browser) Warm() error {
 }
 
 // Parse mirrors Browser::parse() on the pure user-agent path.
-func (b *Browser) Parse(ua string) (*Result, error) {
+func (b *Browser) Parse(ua string, hints *parser.ClientHints) (*Result, error) {
+	chName, chShort, chVersion := b.parseFromClientHints(hints)
+
 	ua0, err := b.parseFromUserAgent(ua)
 	if err != nil {
 		return nil, err
 	}
 
-	name := ua0.name
-	version := ua0.version
-	short := ua0.short
-	engine := ua0.engine
-	engineVersion := ua0.engineVersion
+	var name, version, short, engine, engineVersion string
+
+	// Use client hints in favour of user-agent data when both name and version
+	// are present.
+	if chName != "" && chVersion != "" {
+		name, version, short = chName, chVersion, chShort
+
+		// A client-hints version of the form 2020..2024 identifies Iridium.
+		if iridiumRe.MatchString(version) {
+			name, short = "Iridium", "I1"
+		}
+
+		if strings.HasPrefix(version, "15") && strings.HasPrefix(ua0.version, "114") {
+			name, short = "360 Secure Browser", "3B"
+			engine, engineVersion = ua0.engine, ua0.engineVersion
+		}
+
+		// These browsers report a coarse CH version; keep the UA version.
+		if ua0.version != "" && slicesContains([]string{"A0", "AL", "HP", "JR", "MU", "OM", "OP", "VR"}, short) {
+			version = ua0.version
+		}
+
+		if name == "Vewd Browser" {
+			engine, engineVersion = ua0.engine, ua0.engineVersion
+		}
+
+		// Client hints report Chromium, but the UA detected a specific
+		// Chromium-based browser — prefer that.
+		if (name == "Chromium" || name == "Chrome Webview") && ua0.name != "" &&
+			!slicesContains([]string{"CR", "CV", "AN", "CM"}, ua0.short) {
+			name, short, version = ua0.name, ua0.short, ua0.version
+		}
+
+		// Fix mobile browser names, e.g. Chrome => Chrome Mobile.
+		if name+" Mobile" == ua0.name {
+			name, short = ua0.name, ua0.short
+		}
+
+		// Different browser but same family: take the engine from the UA.
+		if name != ua0.name && browserFamilyOf(name) == browserFamilyOf(ua0.name) {
+			engine, engineVersion = ua0.engine, ua0.engineVersion
+		}
+
+		if name == ua0.name {
+			engine, engineVersion = ua0.engine, ua0.engineVersion
+		}
+
+		// Prefer the UA version when it is a more detailed extension of the CH one.
+		if ua0.version != "" && strings.HasPrefix(ua0.version, version) &&
+			phpVersionCompare(version, ua0.version) < 0 {
+			version = ua0.version
+		}
+
+		if name == "DuckDuckGo Privacy Browser" {
+			version = ""
+		}
+
+		// Prefer a more detailed engine version reported via client hints.
+		if engine == "Blink" && name != "Iridium" && phpVersionCompare(engineVersion, chVersion) < 0 {
+			engineVersion = chVersion
+		}
+	} else {
+		name, version, short = ua0.name, ua0.version, ua0.short
+		engine, engineVersion = ua0.engine, ua0.engineVersion
+	}
 
 	family, _ := BrowserFamily(short)
 
-	// TODO(client-hints): v0.2 — BrowserHints.parse() may override the name
-	// and re-derive engine/family; skipped on the UA-only path.
+	// BrowserHints: an Android app id can identify a browser the UA cannot.
+	if appName := b.browserHintName(hints); appName != "" && appName != name {
+		name = appName
+		version = ""
+
+		s, ok := browserShortName(name)
+		if !ok {
+			return nil, fmt.Errorf("client browser: detected name %q not found in availableBrowsers (ua %q)", name, ua)
+		}
+
+		short = s
+
+		if chromeSafariRe.MatchString(ua) {
+			engine = "Blink"
+			if family, _ = BrowserFamily(short); family == "" {
+				family = "Chrome"
+			}
+
+			engineVersion, err = buildEngineVersion(engine, ua)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 
 	if name == "" || cypressPhantomRegex.MatchString(ua) {
 		return nil, nil
@@ -146,11 +237,11 @@ func (b *Browser) Parse(ua string) (*Result, error) {
 		engineVersion = ""
 	}
 
-	if name == "Wolvic" && engine == "Blink" {
+	if (name == "Yaani Browser" || name == "Wolvic") && engine == "Blink" {
 		family = "Chrome"
 	}
 
-	if name == "Wolvic" && engine == "Gecko" {
+	if (name == "Yaani Browser" || name == "Wolvic") && engine == "Gecko" {
 		family = "Firefox"
 	}
 
@@ -163,6 +254,91 @@ func (b *Browser) Parse(ua string) (*Result, error) {
 		EngineVersion: engineVersion,
 		Family:        family,
 	}, nil
+}
+
+var (
+	iridiumRe      = regexp.MustCompile(`^202[0-4]`)
+	chromeSafariRe = regexp.MustCompile(`(?i)Chrome/.+ Safari/537\.36`)
+)
+
+// browserClientHintMapping maps a brand reported in client hints to the name
+// this library uses (Browser::$clientHintMapping).
+var browserClientHintMapping = map[string][]string{
+	"Chrome":                     {"Google Chrome"},
+	"Chrome Webview":             {"Android WebView"},
+	"DuckDuckGo Privacy Browser": {"DuckDuckGo"},
+	"Edge WebView":               {"Microsoft Edge WebView2"},
+	"Mi Browser":                 {"Miui Browser", "XiaoMiBrowser"},
+	"Microsoft Edge":             {"Edge"},
+	"Norton Private Browser":     {"Norton Secure Browser"},
+	"Opera GX":                   {"Opera GX Android"},
+	"Opera Mini":                 {"Opera Mini Android"},
+	"Vewd Browser":               {"Vewd Core"},
+	"Yandex Browser":             {"YaSearchBrowser"},
+}
+
+func browserApplyClientHintMapping(name string) string {
+	lower := strings.ToLower(name)
+	for mapped, hints := range browserClientHintMapping {
+		for _, h := range hints {
+			if lower == strings.ToLower(h) {
+				return mapped
+			}
+		}
+	}
+
+	return name
+}
+
+func browserFamilyOf(label string) string {
+	f, _ := BrowserFamily(label)
+
+	return f
+}
+
+// parseFromClientHints mirrors Browser::parseBrowserFromClientHints.
+func (b *Browser) parseFromClientHints(hints *parser.ClientHints) (name, short, version string) {
+	if hints == nil {
+		return "", "", ""
+	}
+
+	brands := hints.BrandList()
+	if len(brands) == 0 {
+		return "", "", ""
+	}
+
+	for _, bv := range brands {
+		brand := browserApplyClientHintMapping(bv.Brand)
+
+		for _, e := range availableBrowsers {
+			if parser.FuzzyCompare(brand, e.Name) ||
+				parser.FuzzyCompare(brand+" Browser", e.Name) ||
+				parser.FuzzyCompare(brand, e.Name+" Browser") {
+				name, short, version = e.Name, e.Short, bv.Version
+				break
+			}
+		}
+
+		// Keep looking past Chromium / Microsoft Edge for a more specific brand.
+		if name != "" && name != "Chromium" && name != "Microsoft Edge" {
+			break
+		}
+	}
+
+	if bvers := hints.BrandVersion(); bvers != "" {
+		version = bvers
+	}
+
+	return name, short, parser.BuildVersion(version, nil, b.truncation)
+}
+
+// browserHintName returns the browser name for the client-hints app id, or "".
+func (b *Browser) browserHintName(hints *parser.ClientHints) string {
+	if hints == nil {
+		return ""
+	}
+
+	return b.appHints[hints.App]
 }
 
 // uaBrowser holds the browser fields detected from the user agent.
@@ -291,5 +467,14 @@ func IsMobileOnlyBrowser(browser string) bool {
 		}
 	}
 
+	return false
+}
+
+func slicesContains(list []string, v string) bool {
+	for _, x := range list {
+		if x == v {
+			return true
+		}
+	}
 	return false
 }

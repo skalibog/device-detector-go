@@ -30,6 +30,18 @@
 // [NewFromFS] load an external database instead, which allows updating
 // detection data without recompiling.
 //
+// # Client Hints
+//
+// [DeviceDetector.ParseWithHints] refines detection with HTTP Client Hints
+// (the Sec-CH-UA-* and X-Requested-With headers). Build a [ClientHints] from an
+// incoming request with [NewClientHintsFromHeaders], or from the structured
+// navigator.userAgentData values with [NewClientHintsFromMap]:
+//
+//	hints := devicedetector.NewClientHintsFromHeaders(request.Header)
+//	info, err := detector.ParseWithHints(request.UserAgent(), hints)
+//
+// [DeviceDetector.Parse] is exactly ParseWithHints with nil hints.
+//
 // # Versions
 //
 // By default reported versions are truncated to minor precision ("17.4"),

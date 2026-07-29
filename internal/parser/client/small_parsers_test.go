@@ -83,7 +83,7 @@ func TestSmallParsers(t *testing.T) {
 
 			for _, fx := range fixtures[:perFile] {
 				t.Run(fx.UserAgent, func(t *testing.T) {
-					got, err := p.Parse(fx.UserAgent)
+					got, err := p.Parse(fx.UserAgent, nil)
 					if err != nil {
 						t.Fatalf("parse: %v", err)
 					}

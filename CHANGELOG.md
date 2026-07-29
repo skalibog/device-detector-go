@@ -10,6 +10,25 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 ## [Unreleased]
 
+### Added — Client Hints (v0.3)
+
+- Full HTTP Client Hints support. New `(*DeviceDetector).ParseWithHints(ua,
+  hints)` combines the user agent with `Sec-CH-UA-*` / `X-Requested-With`
+  headers. Build hints with `NewClientHintsFromHeaders(http.Header)` (from a
+  request) or `NewClientHintsFromMap` (for `navigator.userAgentData`). Ported:
+  OS reconciliation (platform/version, Windows remap, Chrome OS/Meta Horizon,
+  Fire/Lineage app remaps), browser reconciliation + `BrowserHints` app lookup,
+  `MobileApp` app-id detection, frozen-UA restoration from the reported model,
+  device model/form-factor fallback, and architecture/bitness platform.
+- `Parse` (user-agent only) is unchanged; hint support is purely additive.
+
+### Validation
+
+- The full upstream fixture corpus now runs with client hints enabled and
+  compares `os_family`/`browser_family` as well: **37,640 / 37,640 = 100%**.
+
+## [0.2.1] - 2026-07-29
+
 ### Changed
 
 - Database resynced to matomo/device-detector release **6.5.1** (was post-6.4.6
@@ -30,7 +49,7 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 - `scripts/sync-upstream.sh` now keeps a full local `upstream/` clone
   (gitignored) as an offline reference for porting and for diffing PHP between
-  refs. Client Hints fixtures remain excluded until v0.3.
+  refs.
 
 ## [0.2.0] - 2026-07-29
 
@@ -127,7 +146,8 @@ Also:
 - Client Hints are not yet supported; hints-dependent fixture entries are
   excluded from the corpus gate until v0.2.
 
-[Unreleased]: https://github.com/skalibog/device-detector-go/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/skalibog/device-detector-go/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/skalibog/device-detector-go/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/skalibog/device-detector-go/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/skalibog/device-detector-go/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/skalibog/device-detector-go/compare/v0.1.0...v0.1.1

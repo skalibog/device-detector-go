@@ -27,7 +27,7 @@ func NewHbbTv(fsys fs.FS) (*HbbTv, error) {
 
 // Parse only proceeds for HbbTV/SmartTvA user agents and always yields a TV
 // result, even when no brand or model could be resolved.
-func (p *HbbTv) Parse(ua string) (*Result, error) {
+func (p *HbbTv) Parse(ua string, hints *parser.ClientHints) (*Result, error) {
 	m, err := parser.MatchUserAgent(ua, hbbTvRegex)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (p *HbbTv) Parse(ua string) (*Result, error) {
 		return nil, nil
 	}
 
-	res, err := p.parse(ua)
+	res, err := p.parse(ua, hints)
 	if err != nil {
 		return nil, err
 	}

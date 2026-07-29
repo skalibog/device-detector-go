@@ -1,6 +1,10 @@
 package device
 
-import "io/fs"
+import (
+	"io/fs"
+
+	"github.com/skalibog/device-detector-go/internal/parser"
+)
 
 // Mobile ports Parser\Device\Mobile: the generic device parser over
 // mobiles.yml, with no pre-check.
@@ -19,6 +23,6 @@ func NewMobile(fsys fs.FS) (*Mobile, error) {
 }
 
 // Parse runs the generic device flow directly.
-func (p *Mobile) Parse(ua string) (*Result, error) {
-	return p.parse(ua)
+func (p *Mobile) Parse(ua string, hints *parser.ClientHints) (*Result, error) {
+	return p.parse(ua, hints)
 }

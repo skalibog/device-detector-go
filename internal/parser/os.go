@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"io/fs"
+	"strconv"
 	"strings"
 
 	"github.com/dlclark/regexp2"
@@ -89,31 +90,98 @@ func (o *OS) SetVersionTruncation(t int) {
 	}
 }
 
-// Parse detects the operating system from ua. It returns (nil, nil) when no OS
-// can be determined.
-//
-// v0.1 is user-agent-only: the client-hints merge paths of the PHP are skipped.
-func (o *OS) Parse(ua string) (*OSResult, error) {
-	// TODO(client-hints): v0.2 — restoreUserAgentFromClientHints and
-	// parseOsFromClientHints are skipped; only the UA path is implemented.
-	name, short, version, err := o.parseFromUserAgent(ua)
+var androidClientHintApps = []string{
+	"com.hisense.odinbrowser", "com.seraphic.openinet.pre",
+	"com.appssppa.idesktoppcbrowser", "every.browser.inc",
+}
+
+// Parse detects the operating system from ua, optionally refined by client
+// hints. It returns (nil, nil) when no OS can be determined.
+func (o *OS) Parse(ua string, hints *ClientHints) (*OSResult, error) {
+	if hints != nil {
+		ua = hints.RestoreUserAgent(ua)
+	}
+
+	chName, chShort, chVersion := o.parseFromClientHints(hints)
+
+	uaName, uaShort, uaVersion, err := o.parseFromUserAgent(ua)
 	if err != nil {
 		return nil, err
 	}
 
-	if name == "" {
+	var name, short, version string
+
+	switch {
+	case chName != "":
+		name, version, short = chName, chVersion, chShort
+
+		// Use the UA version when client hints gave none and the OS families match.
+		if version == "" && osFamilyOf(name) == osFamilyOf(uaName) {
+			version = uaVersion
+		}
+
+		// On Windows, 0.0.0 can be 7, 8 or 8.1 — prefer the UA version.
+		if name == "Windows" && version == "0.0.0" {
+			if uaVersion == "10" {
+				version = ""
+			} else {
+				version = uaVersion
+			}
+		}
+
+		// When the CH name is the UA name's family, the UA name is more detailed.
+		if uaName != name && osFamilyOf(uaName) == name {
+			name = uaName
+
+			switch name {
+			case "LeafOS", "HarmonyOS":
+				version = ""
+			case "PICO OS":
+				version = uaVersion
+			case "Fire OS":
+				if chVersion != "" {
+					version = fireOSVersion(version)
+				}
+			}
+		}
+
+		// Chrome OS is sometimes reported as Linux in client hints (version must match).
+		if name == "GNU/Linux" && uaName == "Chrome OS" && chVersion == uaVersion {
+			name, short = uaName, uaShort
+		}
+
+		// Chrome OS is sometimes reported as Android in client hints.
+		if name == "Android" && uaName == "Chrome OS" {
+			name, version, short = uaName, "", uaShort
+		}
+
+		// Meta Horizon is reported as Linux in client hints.
+		if name == "GNU/Linux" && uaName == "Meta Horizon" {
+			name, short = uaName, uaShort
+		}
+	case uaName != "":
+		name, version, short = uaName, uaVersion, uaShort
+	default:
 		return nil, nil
 	}
 
-	platform, err := o.parsePlatform(ua)
+	platform, err := o.parsePlatform(ua, hints)
 	if err != nil {
 		return nil, err
 	}
 
 	family, _ := OSFamily(short)
 
-	// TODO(client-hints): v0.2 — the androidApps / lineageos.jelly /
-	// firefox.tv app remaps live here in the PHP.
+	if hints != nil {
+		switch app := hints.App; {
+		case name != "Android" && containsStr(androidClientHintApps, app):
+			name, family, short, version = "Android", "Android", "ADR", ""
+		case name != "Lineage OS" && app == "org.lineageos.jelly":
+			name, family, short, version = "Lineage OS", "Android", "LEN", lineageOSVersion(version)
+		case name != "Fire OS" && app == "org.mozilla.tv.firefox":
+			name, family, short, version = "Fire OS", "Android", "FIR", fireOSVersion(version)
+		}
+	}
 
 	result := &OSResult{
 		Name:      name,
@@ -128,6 +196,88 @@ func (o *OS) Parse(ua string) (*OSResult, error) {
 	}
 
 	return result, nil
+}
+
+// parseFromClientHints mirrors parseOsFromClientHints.
+func (o *OS) parseFromClientHints(hints *ClientHints) (name, short, version string) {
+	if hints == nil || hints.Platform == "" {
+		return "", "", ""
+	}
+
+	hintName := osApplyClientHintMapping(hints.Platform)
+
+	for _, pair := range operatingSystemList {
+		if FuzzyCompare(hintName, pair.Name) {
+			name, short = pair.Name, pair.Short
+			break
+		}
+	}
+
+	version = hints.PlatformVersion
+
+	if name == "Windows" {
+		major := phpAtoi(version)
+		minor := phpAtoi(afterFirstDot(version))
+
+		switch {
+		case major == 0:
+			switch minor {
+			case 1:
+				version = "7"
+			case 2:
+				version = "8"
+			case 3:
+				version = "8.1"
+			}
+		case major > 0 && major < 11:
+			version = "10"
+		case major > 10:
+			version = "11"
+		}
+	}
+
+	// On Windows 0.0.0 is meaningful; elsewhere a zero version is dropped.
+	if name != "Windows" && version != "0.0.0" && phpAtoi(version) == 0 {
+		version = ""
+	}
+
+	return name, short, BuildVersion(version, nil, o.truncation)
+}
+
+// osApplyClientHintMapping maps a client-hints platform name to the name this
+// library uses (OperatingSystem::$clientHintMapping).
+func osApplyClientHintMapping(name string) string {
+	switch strings.ToLower(name) {
+	case "linux":
+		return "GNU/Linux"
+	case "macos":
+		return "Mac"
+	default:
+		return name
+	}
+}
+
+func osFamilyOf(label string) string {
+	f, _ := OSFamily(label)
+
+	return f
+}
+
+// fireOSVersion / lineageOSVersion mirror the PHP `map[version] ?? map[major] ?? ”`.
+func fireOSVersion(version string) string {
+	if v, ok := fireOsVersionMapping[version]; ok {
+		return v
+	}
+
+	return fireOsVersionMapping[strconv.Itoa(phpAtoi(version))]
+}
+
+func lineageOSVersion(version string) string {
+	if v, ok := lineageOsVersionMapping[version]; ok {
+		return v
+	}
+
+	return lineageOsVersionMapping[strconv.Itoa(phpAtoi(version))]
 }
 
 // parseFromUserAgent mirrors parseOsFromUserAgent: it finds the first matching
@@ -186,9 +336,29 @@ func (o *OS) parseFromUserAgent(ua string) (name, short, version string, err err
 }
 
 // parsePlatform mirrors parsePlatform for the user-agent-only path.
-func (o *OS) parsePlatform(ua string) (string, error) {
-	// TODO(client-hints): v0.2 — architecture/bitness from client hints is
-	// checked before the UA patterns in the PHP.
+func (o *OS) parsePlatform(ua string, hints *ClientHints) (string, error) {
+	// Architecture from client hints takes precedence over the UA patterns.
+	if hints != nil && hints.Architecture != "" {
+		arch := strings.ToLower(hints.Architecture)
+
+		switch {
+		case strings.Contains(arch, "arm"):
+			return "ARM", nil
+		case strings.Contains(arch, "loongarch64"):
+			return "LoongArch64", nil
+		case strings.Contains(arch, "mips"):
+			return "MIPS", nil
+		case strings.Contains(arch, "sh4"):
+			return "SuperH", nil
+		case strings.Contains(arch, "sparc64"):
+			return "SPARC64", nil
+		case strings.Contains(arch, "x64") || (strings.Contains(arch, "x86") && hints.Bitness == "64"):
+			return "x64", nil
+		case strings.Contains(arch, "x86"):
+			return "x86", nil
+		}
+	}
+
 	for _, c := range platformChecks {
 		m, err := MatchUserAgent(ua, c.pattern)
 		if err != nil {
