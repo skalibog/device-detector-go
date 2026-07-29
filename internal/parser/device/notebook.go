@@ -3,7 +3,7 @@ package device
 import (
 	"io/fs"
 
-	"github.com/skalibog/device-detector-go/parser"
+	"github.com/skalibog/device-detector-go/internal/parser"
 )
 
 // Notebook ports Parser\Device\Notebook: notebook detection in Facebook user

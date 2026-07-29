@@ -5,9 +5,10 @@
 package client
 
 import (
+	"fmt"
 	"io/fs"
 
-	"github.com/skalibog/device-detector-go/parser"
+	"github.com/skalibog/device-detector-go/internal/parser"
 )
 
 // Result holds a detected client. Engine, EngineVersion, Family and ShortName
@@ -32,6 +33,9 @@ type Parser interface {
 	// SetVersionTruncation controls how deep versions are reported. It must be
 	// called before the parser is used concurrently.
 	SetVersionTruncation(t int)
+	// Warm eagerly compiles every regex the parser owns so a broken pattern
+	// surfaces at construction rather than at first match.
+	Warm() error
 }
 
 // clientEntry is one record of a generic client regex file.
@@ -75,6 +79,17 @@ func (p *genericParser) Name() string { return p.name }
 
 // SetVersionTruncation sets the version truncation level.
 func (p *genericParser) SetVersionTruncation(t int) { p.truncation = t }
+
+// Warm compiles every entry regex.
+func (p *genericParser) Warm() error {
+	for i := range p.entries {
+		if _, err := parser.Compile(p.entries[i].Regex); err != nil {
+			return fmt.Errorf("client %s: compiling %q: %w", p.name, p.entries[i].Regex, err)
+		}
+	}
+
+	return nil
+}
 
 // Parse mirrors AbstractClientParser::parse().
 func (p *genericParser) Parse(ua string) (*Result, error) {

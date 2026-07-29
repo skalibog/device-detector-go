@@ -11,8 +11,6 @@ import (
 	"testing"
 
 	"gopkg.in/yaml.v3"
-
-	"github.com/skalibog/device-detector-go/parser"
 )
 
 // flexString decodes any YAML scalar as its literal source text, so that
@@ -137,7 +135,7 @@ func TestFixtures(t *testing.T) {
 		t.Fatalf("no fixtures found: %v", err)
 	}
 
-	detector, err := New(WithVersionTruncation(parser.VersionTruncationNone))
+	detector, err := New(WithVersionTruncation(VersionTruncationNone))
 	if err != nil {
 		t.Fatalf("constructing detector: %v", err)
 	}
@@ -284,7 +282,7 @@ func compareRegular(base string, entry fixtureEntry, info *Info, fails []mismatc
 		gotType, gotName, gotVersion, gotEngine, gotEngineVersion := "", "", "", "", ""
 		if info.Client() != nil {
 			c := info.Client()
-			gotType, gotName, gotVersion, gotEngine, gotEngineVersion = c.Type, c.Name, c.Version, c.Engine, c.EngineVersion
+			gotType, gotName, gotVersion, gotEngine, gotEngineVersion = string(c.Type), c.Name, c.Version, c.Engine, c.EngineVersion
 		}
 
 		fails = check(base, ua, "client.type", string(expClient.Type), gotType, fails)

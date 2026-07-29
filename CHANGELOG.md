@@ -10,6 +10,37 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 ## [Unreleased]
 
+### Changed (BREAKING — API freeze ahead of v1.0)
+
+The public API is being locked down before v1.0. The detection machinery moved
+under `internal/`, and the root package now owns every type a caller needs, so
+the API no longer leaks the regex engine, the YAML library, or the pipeline
+shape. Migrate once:
+
+| Removed / changed | Use instead |
+|---|---|
+| `parser`, `parser/client`, `parser/device` packages | now `internal/` — not importable |
+| `info.Device() int` | `info.DeviceType() DeviceType` |
+| `device.TypeSmartphone` (untyped int) | `devicedetector.DeviceTypeSmartphone` (typed) |
+| `parser.VersionTruncationNone` | `devicedetector.VersionTruncationNone` |
+| `WithVersionTruncation(int)` | `WithVersionTruncation(VersionTruncation)` |
+| `*parser.BotResult` | `*devicedetector.Bot` |
+| `*parser.OSResult` | `*devicedetector.OS` |
+| `*client.Result` (`Type string`) | `*devicedetector.Client` (`Type ClientType`) |
+| `devicedetector.Unknown` (`"UNK"`) | removed — unknown fields are `""` |
+
+Also:
+
+- `Parse` never returns `(nil, error)`: on a stage error (match timeout, or a
+  broken pattern in an external database) it returns the partial `*Info` built
+  so far alongside the error, so results are best-effort. `Info` is never nil.
+- `New` now compiles the whole database up front (fail-fast, ~130 ms for the
+  embedded DB) so a broken external database surfaces at construction. Opt out
+  with `WithLazyCompile`.
+- New `(*DeviceDetector).IsBot(ua) (bool, error)` — a cheap bot-only check.
+- `DeviceType` values match matomo's `DEVICE_TYPE_*` ids; `DeviceType.String()`
+  and `DeviceTypeFromName` round-trip the canonical names.
+
 ## [0.1.2] - 2026-07-18
 
 ### Security

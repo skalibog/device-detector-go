@@ -122,6 +122,13 @@ func TestBuildVersion(t *testing.T) {
 	if got := BuildVersion("v$1.", []string{"full", "7_0"}, VersionTruncationNone); got != "v7.0" {
 		t.Errorf("dot/space trim: got %q, want v7.0", got)
 	}
+
+	// A stray negative truncation must not produce a negative slice bound.
+	for _, bad := range []int{-2, -100} {
+		if got := BuildVersion("$1", []string{"full", "1_2_3"}, bad); got != "1.2.3" {
+			t.Errorf("negative truncation %d: got %q, want unchanged 1.2.3", bad, got)
+		}
+	}
 }
 
 func TestFuzzyCompare(t *testing.T) {

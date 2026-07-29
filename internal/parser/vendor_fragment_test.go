@@ -9,7 +9,7 @@ import (
 // The fragments come from a device UA's browser-mode marker; the parser applies
 // a trailing "[^a-z0-9]+" guard, so each token is followed by a delimiter.
 func TestVendorFragmentParse(t *testing.T) {
-	v, err := NewVendorFragment(os.DirFS("../data/regexes"))
+	v, err := NewVendorFragment(os.DirFS("../../data/regexes"))
 	if err != nil {
 		t.Fatalf("NewVendorFragment: %v", err)
 	}

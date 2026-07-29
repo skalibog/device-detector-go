@@ -8,7 +8,7 @@ import (
 func newTestBot(t *testing.T) *Bot {
 	t.Helper()
 
-	b, err := NewBot(os.DirFS("../data/regexes"))
+	b, err := NewBot(os.DirFS("../../data/regexes"))
 	if err != nil {
 		t.Fatalf("NewBot: %v", err)
 	}

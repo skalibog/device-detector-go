@@ -3,7 +3,7 @@ package client
 import (
 	"testing"
 
-	"github.com/skalibog/device-detector-go/parser"
+	"github.com/skalibog/device-detector-go/internal/parser"
 )
 
 func TestBrowserParse(t *testing.T) {

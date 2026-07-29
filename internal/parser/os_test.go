@@ -8,7 +8,7 @@ import (
 func newTestOS(t *testing.T) *OS {
 	t.Helper()
 
-	p, err := NewOS(os.DirFS("../data/regexes"))
+	p, err := NewOS(os.DirFS("../../data/regexes"))
 	if err != nil {
 		t.Fatalf("NewOS: %v", err)
 	}
@@ -142,7 +142,7 @@ func TestOSParseNoMatch(t *testing.T) {
 
 // TestOSVersionTruncationDefault checks that the default truncation is minor.
 func TestOSVersionTruncationDefault(t *testing.T) {
-	p, err := NewOS(os.DirFS("../data/regexes"))
+	p, err := NewOS(os.DirFS("../../data/regexes"))
 	if err != nil {
 		t.Fatalf("NewOS: %v", err)
 	}

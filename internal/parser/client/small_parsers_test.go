@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/skalibog/device-detector-go/parser"
+	"github.com/skalibog/device-detector-go/internal/parser"
 	"gopkg.in/yaml.v3"
 )
 
@@ -23,12 +23,12 @@ type clientFixture struct {
 	BrowserFamily string `yaml:"browser_family"`
 }
 
-func regexFS() fs.FS { return os.DirFS("../../data/regexes") }
+func regexFS() fs.FS { return os.DirFS("../../../data/regexes") }
 
 func loadClientFixtures(t *testing.T, name string) []clientFixture {
 	t.Helper()
 
-	data, err := os.ReadFile(filepath.Join("..", "..", "testdata", "fixtures", name))
+	data, err := os.ReadFile(filepath.Join("..", "..", "..", "testdata", "fixtures", name))
 	if err != nil {
 		t.Fatalf("read fixture %s: %v", name, err)
 	}
