@@ -92,6 +92,46 @@ var knownBrands = func() map[string]struct{} {
 	return m
 }()
 
+// clientHintFormFactorsMapping maps a Sec-CH-UA form factor to a device type,
+// in the order AbstractDeviceParser checks them (the first present wins).
+var clientHintFormFactorsMapping = []struct {
+	formFactor string
+	deviceType int
+}{
+	{"automotive", TypeCarBrowser},
+	{"xr", TypeWearable},
+	{"watch", TypeWearable},
+	{"mobile", TypeSmartphone},
+	{"tablet", TypeTablet},
+	{"desktop", TypeDesktop},
+	{"eink", TypeTablet},
+}
+
+// parseDeviceClientHints mirrors AbstractDeviceParser::parseClientHints: with a
+// reported model it also derives a device type from the form factors.
+func parseDeviceClientHints(hints *parser.ClientHints) *Result {
+	if hints == nil || hints.Model == "" {
+		return nil
+	}
+
+	deviceType := TypeUnknown
+
+	for _, m := range clientHintFormFactorsMapping {
+		for _, ff := range hints.FormFactors {
+			if ff == m.formFactor {
+				deviceType = m.deviceType
+				break
+			}
+		}
+
+		if deviceType != TypeUnknown {
+			break
+		}
+	}
+
+	return &Result{Type: deviceType, Model: hints.Model}
+}
+
 func isKnownBrand(name string) bool {
 	_, ok := knownBrands[name]
 	return ok
@@ -108,7 +148,7 @@ type Result struct {
 // Parser is implemented by every device parser.
 type Parser interface {
 	// Parse returns nil, nil when the user agent does not match the parser.
-	Parse(ua string) (*Result, error)
+	Parse(ua string, hints *parser.ClientHints) (*Result, error)
 	// Name returns the parser's internal name.
 	Name() string
 	// Warm eagerly compiles every brand and model regex so a broken pattern
@@ -202,7 +242,30 @@ func buildModel(model string, matches []string) string {
 // parse mirrors AbstractDeviceParser::parse() for the user-agent-only path;
 // client-hint handling is the orchestrator's responsibility. It returns
 // nil, nil when no brand regex matches.
-func (b *base) parse(ua string) (*Result, error) {
+func (b *base) parse(ua string, hints *parser.ClientHints) (*Result, error) {
+	// Client-hints device fallback: a model (and form-factor device type) that
+	// the user agent alone may not carry. Mirrors AbstractDeviceParser::parse.
+	chResult := parseDeviceClientHints(hints)
+
+	chModel := ""
+	if chResult != nil {
+		chModel = chResult.Model
+	}
+
+	if hints != nil {
+		ua = hints.RestoreUserAgent(ua)
+	}
+
+	// With no model from client hints, a still-frozen or desktop UA cannot yield
+	// a device — bail with an empty result so the chain stops here.
+	if chModel == "" && parser.HasUserAgentClientHintsFragment(ua) {
+		return &Result{Type: TypeUnknown}, nil
+	}
+
+	if chModel == "" && parser.HasDesktopFragment(ua) {
+		return &Result{Type: TypeUnknown}, nil
+	}
+
 	var (
 		matchedBrand string
 		regex        *deviceRegex
@@ -227,7 +290,9 @@ func (b *base) parse(ua string) (*Result, error) {
 	}
 
 	if matches == nil {
-		return nil, nil
+		// No brand matched: fall back to the client-hints result (nil without
+		// hints, so the user-agent-only behaviour is unchanged).
+		return chResult, nil
 	}
 
 	res := &Result{Type: TypeUnknown}
@@ -308,7 +373,7 @@ func newPreMatch(fsys fs.FS, name, file string) (preMatchParser, error) {
 }
 
 // Parse runs the combined pre-match before delegating to the generic flow.
-func (p *preMatchParser) Parse(ua string) (*Result, error) {
+func (p *preMatchParser) Parse(ua string, hints *parser.ClientHints) (*Result, error) {
 	if parser.PreMatchEmpty(p.combined) {
 		return nil, nil
 	}
@@ -322,7 +387,7 @@ func (p *preMatchParser) Parse(ua string) (*Result, error) {
 		return nil, nil
 	}
 
-	return p.parse(ua)
+	return p.parse(ua, hints)
 }
 
 // All returns the device parsers in the exact order DeviceDetector tries them

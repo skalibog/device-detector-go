@@ -15,7 +15,7 @@ This is an **unofficial, AI-assisted port** translated directly from the PHP sou
 ## Highlights
 
 - **Zero-config** — the regex database ships inside the binary via `go:embed`; `devicedetector.New()` just works. Loading from an external directory is also supported for out-of-band database updates.
-- **Byte-faithful to upstream** — all 37,262 UA-string fixture entries from matomo/device-detector reproduce identically, enforced in CI with a zero-mismatch gate.
+- **Byte-faithful to upstream** — all 37,640 fixture entries (with client hints) from matomo/device-detector reproduce identically, enforced in CI with a zero-mismatch gate.
 - **Thread-safe by design** — one `DeviceDetector` instance is shared across goroutines; parsers are immutable after construction. Verified with the race detector and a concurrent-determinism test.
 - **Complete detection surface** — 803 bots, 716 browsers (with engine and engine version), 203 operating systems, 2,106 device brands across 14 device types.
 
@@ -69,6 +69,17 @@ dd.New(dd.WithLazyCompile())                               // defer compilation;
 dd.NewFromDir("path/to/regexes")                           // external regex database
 ```
 
+## Client Hints
+
+Refine detection with HTTP Client Hints (`Sec-CH-UA-*`, `X-Requested-With`):
+
+```go
+hints := dd.NewClientHintsFromHeaders(request.Header)      // from an *http.Request
+info, err := detector.ParseWithHints(request.UserAgent(), hints)
+```
+
+`NewClientHintsFromMap` accepts the structured `navigator.userAgentData` values (brand list, form factors, mobile flag). `Parse(ua)` is `ParseWithHints(ua, nil)`.
+
 ## Result surface
 
 | Accessor | Returns |
@@ -82,7 +93,7 @@ dd.NewFromDir("path/to/regexes")                           // external regex dat
 
 ## Validation
 
-The test suite replays the upstream fixture corpus — **37,262 user agents, 100.00% identical output** — and fails on a single mismatch. Client-hints fixture entries are excluded until v0.3 (Client Hints). Statement coverage across all packages is ~83%, dominated by the corpus replay.
+The test suite replays the upstream fixture corpus — **37,640 user agents (user-agent and client-hints), 100.00% identical output** — and fails on a single mismatch. Statement coverage across all packages is ~83%, dominated by the corpus replay.
 
 ## Performance
 
@@ -119,7 +130,7 @@ make sync-upstream   # pull regex DB + fixtures from upstream
 
 ## Roadmap
 
-- [ ] Client Hints support (v0.3) — all skipped branches are marked `TODO(client-hints)` in the source
+- [x] Client Hints support — `ParseWithHints`
 - [ ] Performance pass — RE2 prefilter fast-path
 - [ ] Browser family / OS family surfacing parity review
 

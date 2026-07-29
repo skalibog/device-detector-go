@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"sync"
 	"testing"
 
@@ -65,12 +64,14 @@ type fxDevice struct {
 }
 
 type fixtureEntry struct {
-	UserAgent string    `yaml:"user_agent"`
-	Bot       yaml.Node `yaml:"bot"`
-	OS        yaml.Node `yaml:"os"`
-	Client    yaml.Node `yaml:"client"`
-	Device    yaml.Node `yaml:"device"`
-	Headers   yaml.Node `yaml:"headers"`
+	UserAgent     string    `yaml:"user_agent"`
+	Bot           yaml.Node `yaml:"bot"`
+	OS            yaml.Node `yaml:"os"`
+	Client        yaml.Node `yaml:"client"`
+	Device        yaml.Node `yaml:"device"`
+	Headers       yaml.Node `yaml:"headers"`
+	OSFamily      string    `yaml:"os_family"`
+	BrowserFamily string    `yaml:"browser_family"`
 }
 
 func decodeMapping[T any](node yaml.Node) *T {
@@ -153,10 +154,6 @@ func TestFixtures(t *testing.T) {
 	for _, file := range files {
 		base := filepath.Base(file)
 
-		if strings.HasPrefix(base, "clienthints") {
-			continue // client hints support lands in v0.2
-		}
-
 		if testing.Short() && !shortSet[base] {
 			continue
 		}
@@ -174,17 +171,25 @@ func TestFixtures(t *testing.T) {
 				t.Fatalf("parsing %s: %v", base, err)
 			}
 
-			filePassed, fileTotal, fileSkipped := 0, 0, 0
+			filePassed, fileTotal := 0, 0
 
 			for _, entry := range entries {
-				// Entries with request headers exercise client hints,
-				// which land in v0.2.
+				var (
+					info *Info
+					err  error
+				)
+
 				if entry.Headers.Kind != 0 {
-					fileSkipped++
-					continue
+					var headers map[string]any
+					if e := entry.Headers.Decode(&headers); e != nil {
+						t.Fatalf("decoding headers for %q: %v", entry.UserAgent, e)
+					}
+
+					info, err = detector.ParseWithHints(entry.UserAgent, NewClientHintsFromMap(headers))
+				} else {
+					info, err = detector.Parse(entry.UserAgent)
 				}
 
-				info, err := detector.Parse(entry.UserAgent)
 				if err != nil {
 					t.Fatalf("parse error for %q: %v", entry.UserAgent, err)
 				}
@@ -210,13 +215,8 @@ func TestFixtures(t *testing.T) {
 				}
 			}
 
-			skippedNote := ""
-			if fileSkipped > 0 {
-				skippedNote = fmt.Sprintf(" [%d client-hints entries skipped]", fileSkipped)
-			}
-
 			perFileMu.Lock()
-			perFile[base] = fmt.Sprintf("%d/%d (%.1f%%)%s", filePassed, fileTotal, 100*float64(filePassed)/float64(max(fileTotal, 1)), skippedNote)
+			perFile[base] = fmt.Sprintf("%d/%d (%.1f%%)", filePassed, fileTotal, 100*float64(filePassed)/float64(max(fileTotal, 1)))
 			perFileMu.Unlock()
 		})
 	}
@@ -301,6 +301,25 @@ func compareRegular(base string, entry fixtureEntry, info *Info, fails []mismatc
 		fails = check(base, ua, "device.type", string(expDevice.Type), info.DeviceName(), fails)
 		fails = check(base, ua, "device.brand", string(expDevice.Brand), info.Brand(), fails)
 		fails = check(base, ua, "device.model", string(expDevice.Model), info.Model(), fails)
+	}
+
+	// Families are serialised as "Unknown" when absent.
+	if entry.OSFamily != "" {
+		got := "Unknown"
+		if info.OS() != nil && info.OS().Family != "" {
+			got = info.OS().Family
+		}
+
+		fails = check(base, ua, "os_family", entry.OSFamily, got, fails)
+	}
+
+	if entry.BrowserFamily != "" {
+		got := "Unknown"
+		if info.Client() != nil && info.Client().Type == ClientBrowser && info.Client().Family != "" {
+			got = info.Client().Family
+		}
+
+		fails = check(base, ua, "browser_family", entry.BrowserFamily, got, fails)
 	}
 
 	return fails

@@ -15,7 +15,7 @@ func TestBrowserParse(t *testing.T) {
 
 	for _, fx := range loadClientFixtures(t, "desktop-1.yml") {
 		t.Run(fx.UserAgent, func(t *testing.T) {
-			got, err := b.Parse(fx.UserAgent)
+			got, err := b.Parse(fx.UserAgent, nil)
 			if err != nil {
 				t.Fatalf("parse: %v", err)
 			}
@@ -59,7 +59,7 @@ func TestBrowserNoMatch(t *testing.T) {
 
 	// A PhantomJS user agent must be suppressed even though it matches a
 	// browser regex, mirroring Browser::parse().
-	got, err := b.Parse("Mozilla/5.0 (Unknown; Linux x86_64) AppleWebKit/534.34 (KHTML, like Gecko) PhantomJS/2.1.1 Safari/534.34")
+	got, err := b.Parse("Mozilla/5.0 (Unknown; Linux x86_64) AppleWebKit/534.34 (KHTML, like Gecko) PhantomJS/2.1.1 Safari/534.34", nil)
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}
@@ -109,5 +109,35 @@ func TestIsMobileOnlyBrowser(t *testing.T) {
 				t.Errorf("IsMobileOnlyBrowser(%q) = %v, want %v", tc.browser, got, tc.want)
 			}
 		})
+	}
+}
+
+func TestBrowserClientHints(t *testing.T) {
+	b, err := NewBrowser(regexFS())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// A frozen Chrome UA plus a brand list identifying Google Chrome.
+	ua := "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36"
+	hints := &parser.ClientHints{
+		FullVersionList: []parser.BrandVersion{
+			{Brand: "Not.A/Brand", Version: "8.0.0.0"},
+			{Brand: "Chromium", Version: "114.0.5735.196"},
+			{Brand: "Google Chrome", Version: "114.0.5735.196"},
+		},
+	}
+	got, err := b.Parse(ua, hints)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got == nil || got.Name != "Chrome Mobile" {
+		t.Errorf("browser CH = %+v, want name Chrome Mobile", got)
+	}
+
+	// nil hints behaves like the UA-only path.
+	ua0, _ := b.Parse(ua, nil)
+	if ua0 == nil || ua0.Name != "Chrome Mobile" {
+		t.Errorf("nil-hints = %+v", ua0)
 	}
 }

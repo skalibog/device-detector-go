@@ -23,7 +23,7 @@ func NewNotebook(fsys fs.FS) (*Notebook, error) {
 }
 
 // Parse only proceeds when the user agent carries the FBMD/ fragment.
-func (p *Notebook) Parse(ua string) (*Result, error) {
+func (p *Notebook) Parse(ua string, hints *parser.ClientHints) (*Result, error) {
 	m, err := parser.MatchUserAgent(ua, "FBMD/")
 	if err != nil {
 		return nil, err
@@ -33,5 +33,5 @@ func (p *Notebook) Parse(ua string) (*Result, error) {
 		return nil, nil
 	}
 
-	return p.parse(ua)
+	return p.parse(ua, hints)
 }

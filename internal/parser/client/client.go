@@ -27,7 +27,7 @@ type Result struct {
 type Parser interface {
 	// Parse returns the detected client, or nil,nil when the user agent does
 	// not match this parser.
-	Parse(ua string) (*Result, error)
+	Parse(ua string, hints *parser.ClientHints) (*Result, error)
 	// Name returns the parser name as used in PHP ($parserName).
 	Name() string
 	// SetVersionTruncation controls how deep versions are reported. It must be
@@ -92,7 +92,7 @@ func (p *genericParser) Warm() error {
 }
 
 // Parse mirrors AbstractClientParser::parse().
-func (p *genericParser) Parse(ua string) (*Result, error) {
+func (p *genericParser) Parse(ua string, _ *parser.ClientHints) (*Result, error) {
 	if parser.PreMatchEmpty(p.overall) {
 		return nil, nil
 	}
@@ -165,11 +165,12 @@ func NewMediaPlayer(fsys fs.FS) (*MediaPlayer, error) {
 	return &MediaPlayer{g}, nil
 }
 
-// MobileApp detects mobile applications (Parser/Client/MobileApp.php).
-//
-// TODO(client-hints): v0.2 — the PHP parser augments the UA result with app
-// hints (AppHints.parse); only the pure UA path is implemented here.
-type MobileApp struct{ *genericParser }
+// MobileApp detects mobile applications (Parser/Client/MobileApp.php),
+// augmenting the user-agent result with the client-hints app id (AppHints).
+type MobileApp struct {
+	*genericParser
+	appHints map[string]string // client/hints/apps.yml: app id -> app name
+}
 
 // NewMobileApp loads the mobile app database from fsys.
 func NewMobileApp(fsys fs.FS) (*MobileApp, error) {
@@ -178,7 +179,38 @@ func NewMobileApp(fsys fs.FS) (*MobileApp, error) {
 		return nil, err
 	}
 
-	return &MobileApp{g}, nil
+	var appHints map[string]string
+	if err := parser.Load(fsys, "client/hints/apps.yml", &appHints); err != nil {
+		return nil, err
+	}
+
+	return &MobileApp{genericParser: g, appHints: appHints}, nil
+}
+
+// Parse mirrors MobileApp::parse: the generic user-agent result refined by the
+// client-hints app id.
+func (m *MobileApp) Parse(ua string, hints *parser.ClientHints) (*Result, error) {
+	res, err := m.genericParser.Parse(ua, hints)
+	if err != nil {
+		return nil, err
+	}
+
+	var name, version string
+	if res != nil {
+		name, version = res.Name, res.Version
+	}
+
+	if hints != nil {
+		if appName := m.appHints[hints.App]; appName != "" && appName != name {
+			name, version = appName, ""
+		}
+	}
+
+	if name == "" {
+		return nil, nil
+	}
+
+	return &Result{Type: "mobile app", Name: name, Version: version}, nil
 }
 
 // PIM detects personal information managers (Parser/Client/PIM.php).

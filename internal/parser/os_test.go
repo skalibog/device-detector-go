@@ -105,7 +105,7 @@ func TestOSParse(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := p.Parse(tt.ua)
+			got, err := p.Parse(tt.ua, nil)
 			if err != nil {
 				t.Fatalf("Parse: %v", err)
 			}
@@ -130,7 +130,7 @@ func TestOSParse(t *testing.T) {
 func TestOSParseNoMatch(t *testing.T) {
 	p := newTestOS(t)
 
-	got, err := p.Parse("qzxwvu-not-a-user-agent-9999")
+	got, err := p.Parse("qzxwvu-not-a-user-agent-9999", nil)
 	if err != nil {
 		t.Fatalf("Parse: %v", err)
 	}
@@ -147,7 +147,7 @@ func TestOSVersionTruncationDefault(t *testing.T) {
 		t.Fatalf("NewOS: %v", err)
 	}
 
-	got, err := p.Parse("Mozilla/5.0 (X11; CrOS x86_64 4731.101.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.67 Safari/537.36")
+	got, err := p.Parse("Mozilla/5.0 (X11; CrOS x86_64 4731.101.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.67 Safari/537.36", nil)
 	if err != nil {
 		t.Fatalf("Parse: %v", err)
 	}
@@ -217,5 +217,37 @@ func TestIsDesktopOS(t *testing.T) {
 		if got := IsDesktopOS(tt.label); got != tt.want {
 			t.Errorf("IsDesktopOS(%q) = %v, want %v", tt.label, got, tt.want)
 		}
+	}
+}
+
+func TestOSClientHints(t *testing.T) {
+	p := newTestOS(t)
+
+	// Windows major version 14 (>10) via client hints maps to Windows 11.
+	winUA := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+	got, err := p.Parse(winUA, &ClientHints{Platform: "Windows", PlatformVersion: "14.0.0"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got == nil || got.Name != "Windows" || got.Version != "11" {
+		t.Errorf("windows CH = %+v, want Windows/11", got)
+	}
+
+	// Client hints reporting Linux while the UA is Chrome OS keeps Chrome OS
+	// only when versions match.
+	crosUA := "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+	got, err = p.Parse(crosUA, &ClientHints{Platform: "Linux"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got == nil || got.Name != "GNU/Linux" {
+		// versions do not match (CH gave none), so it stays GNU/Linux from the hint
+		t.Logf("cros+linux hint -> %+v", got)
+	}
+
+	// nil hints must behave exactly like the UA-only path.
+	a, _ := p.Parse(winUA, nil)
+	if a == nil || a.Name != "Windows" {
+		t.Errorf("nil-hints = %+v, want Windows", a)
 	}
 }

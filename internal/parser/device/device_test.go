@@ -146,7 +146,7 @@ func TestParse(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parsers[tt.parser].Parse(tt.ua)
+			got, err := parsers[tt.parser].Parse(tt.ua, nil)
 			if err != nil {
 				t.Fatalf("Parse: %v", err)
 			}
@@ -179,7 +179,7 @@ func TestNoMatch(t *testing.T) {
 	}
 
 	// A plain desktop UA must not match the console parser.
-	got, err := console.Parse("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+	got, err := console.Parse("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", nil)
 	if err != nil {
 		t.Fatalf("Parse: %v", err)
 	}

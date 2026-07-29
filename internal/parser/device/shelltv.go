@@ -27,7 +27,7 @@ func NewShellTv(fsys fs.FS) (*ShellTv, error) {
 }
 
 // Parse only proceeds for ShellTv user agents and always yields a TV result.
-func (p *ShellTv) Parse(ua string) (*Result, error) {
+func (p *ShellTv) Parse(ua string, hints *parser.ClientHints) (*Result, error) {
 	m, err := parser.MatchUserAgent(ua, shellTvRegex)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (p *ShellTv) Parse(ua string) (*Result, error) {
 		return nil, nil
 	}
 
-	res, err := p.parse(ua)
+	res, err := p.parse(ua, hints)
 	if err != nil {
 		return nil, err
 	}
