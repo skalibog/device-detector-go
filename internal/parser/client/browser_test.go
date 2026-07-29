@@ -38,8 +38,14 @@ func TestBrowserParse(t *testing.T) {
 			if got.EngineVersion != fx.Client.EngineVersion {
 				t.Errorf("engine_version = %q, want %q", got.EngineVersion, fx.Client.EngineVersion)
 			}
-			if got.Family != fx.BrowserFamily {
-				t.Errorf("family = %q, want %q", got.Family, fx.BrowserFamily)
+			// The parser returns "" for a familyless browser (PHP null); the
+			// fixture records the DeviceDetector-level serialization "Unknown".
+			wantFamily := fx.BrowserFamily
+			if wantFamily == "Unknown" {
+				wantFamily = ""
+			}
+			if got.Family != wantFamily {
+				t.Errorf("family = %q, want %q", got.Family, wantFamily)
 			}
 		})
 	}

@@ -103,7 +103,9 @@ func (b *Bot) Parse(ua string) (*BotResult, error) {
 			e := b.entries[i]
 
 			return &BotResult{
-				Name:     e.Name,
+				// Bot::parse substitutes $1..$N in the name from the match,
+				// e.g. name "$1" over regex "(360Spider(?:-Image|-Video)?)".
+				Name:     BuildByMatch(e.Name, m),
 				Category: e.Category,
 				URL:      e.URL,
 				Producer: e.Producer,

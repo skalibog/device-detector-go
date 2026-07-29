@@ -10,6 +10,30 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 ## [Unreleased]
 
+### Changed
+
+- Database resynced to matomo/device-detector release **6.5.1** (was post-6.4.6
+  `6f07f615`) — ~11 months of upstream updates. The hand-mirrored Go lookup
+  tables were regenerated to match the new database: `deviceBrands` (2,106),
+  `availableBrowsers` (716), `browserFamilies`, `mobileOnlyBrowsers` (226),
+  `operatingSystems` (203), `osFamilies`, `availableEngines` (21). The full UA
+  fixture corpus is back to 100% (37,262 entries).
+
+### Fixed
+
+- Bot names with capture-group placeholders are now substituted (e.g. `$1` over
+  `(360Spider(?:-Image|-Video)?)`), matching `Bot::parse`. 6.5.1 introduced such
+  names; older data used literal names only.
+- `Redline` client is classified as a TV device (upstream #8201).
+
+### Notes
+
+- `scripts/sync-upstream.sh` now keeps a full local `upstream/` clone
+  (gitignored) as an offline reference for porting and for diffing PHP between
+  refs. Client Hints fixtures remain excluded until v0.3.
+
+## [0.2.0] - 2026-07-29
+
 ### Changed (BREAKING — API freeze ahead of v1.0)
 
 The public API is being locked down before v1.0. The detection machinery moved
@@ -103,7 +127,8 @@ Also:
 - Client Hints are not yet supported; hints-dependent fixture entries are
   excluded from the corpus gate until v0.2.
 
-[Unreleased]: https://github.com/skalibog/device-detector-go/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/skalibog/device-detector-go/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/skalibog/device-detector-go/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/skalibog/device-detector-go/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/skalibog/device-detector-go/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/skalibog/device-detector-go/releases/tag/v0.1.0

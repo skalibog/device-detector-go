@@ -63,7 +63,7 @@ func TestBotParse(t *testing.T) {
 		{
 			name: "expanse security checker",
 			ua:   "Expanse indexes the network perimeters of our customers. If you have any questions or concerns, please reach out to: scaninfo@expanseinc.com",
-			want: BotResult{Name: "Expanse", Category: "Security Checker", URL: "https://expanse.co/", Producer: BotProducer{Name: "Expanse Inc.", URL: "https://expanse.co/"}},
+			want: BotResult{Name: "Cortex Xpanse", Category: "Security Checker", URL: "https://docs-cortex.paloaltonetworks.com/r/1/Cortex-Xpanse/Scanning-activity", Producer: BotProducer{Name: "Palo Alto Networks, Inc.", URL: "https://www.paloaltonetworks.com/"}},
 		},
 		{
 			name: "googlebot",

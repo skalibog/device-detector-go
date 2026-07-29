@@ -3,7 +3,7 @@
 [![CI](https://github.com/skalibog/device-detector-go/actions/workflows/ci.yml/badge.svg)](https://github.com/skalibog/device-detector-go/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/skalibog/device-detector-go.svg)](https://pkg.go.dev/github.com/skalibog/device-detector-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/skalibog/device-detector-go)](https://goreportcard.com/report/github.com/skalibog/device-detector-go)
-[![Upstream fixtures](https://img.shields.io/badge/upstream_fixtures-36%2C333_%2F_100%25-brightgreen)](#validation)
+[![Upstream fixtures](https://img.shields.io/badge/upstream_fixtures-37%2C262_%2F_100%25-brightgreen)](#validation)
 [![Coverage](https://img.shields.io/badge/coverage-83%25-green)](#validation)
 [![Go version](https://img.shields.io/github/go-mod/go-version/skalibog/device-detector-go)](go.mod)
 [![License: LGPL-3.0-or-later](https://img.shields.io/badge/license-LGPL--3.0--or--later-blue)](LICENSE)
@@ -15,9 +15,9 @@ This is an **unofficial, AI-assisted port** translated directly from the PHP sou
 ## Highlights
 
 - **Zero-config** — the regex database ships inside the binary via `go:embed`; `devicedetector.New()` just works. Loading from an external directory is also supported for out-of-band database updates.
-- **Byte-faithful to upstream** — all 36,333 UA-string fixture entries from matomo/device-detector reproduce identically, enforced in CI with a zero-mismatch gate.
+- **Byte-faithful to upstream** — all 37,262 UA-string fixture entries from matomo/device-detector reproduce identically, enforced in CI with a zero-mismatch gate.
 - **Thread-safe by design** — one `DeviceDetector` instance is shared across goroutines; parsers are immutable after construction. Verified with the race detector and a concurrent-determinism test.
-- **Complete detection surface** — 1,083 bots, 679 browsers (with engine and engine version), 186 operating systems, 2,084 device brands across 14 device types.
+- **Complete detection surface** — 803 bots, 716 browsers (with engine and engine version), 203 operating systems, 2,106 device brands across 14 device types.
 
 ## Install
 
@@ -82,7 +82,7 @@ dd.NewFromDir("path/to/regexes")                           // external regex dat
 
 ## Validation
 
-The test suite replays the upstream fixture corpus — **36,333 user agents, 100.00% identical output** — and fails on a single mismatch. Client-hints fixture entries are excluded until v0.2. Statement coverage across all packages is ~83%, dominated by the corpus replay.
+The test suite replays the upstream fixture corpus — **37,262 user agents, 100.00% identical output** — and fails on a single mismatch. Client-hints fixture entries are excluded until v0.3 (Client Hints). Statement coverage across all packages is ~83%, dominated by the corpus replay.
 
 ## Performance
 
@@ -100,7 +100,7 @@ Recommendations for high-volume callers:
 
 ## Data provenance and updates
 
-The regex database (`data/regexes/`) and test fixtures (`testdata/fixtures/`) are taken verbatim from [matomo/device-detector](https://github.com/matomo-org/device-detector) at commit [`6f07f615`](https://github.com/matomo-org/device-detector/commit/6f07f615199851548db47a900815d2ea2cdcde08) (post-6.4.6 master). See [data/NOTICE.md](data/NOTICE.md).
+The regex database (`data/regexes/`) and test fixtures (`testdata/fixtures/`) are taken verbatim from [matomo/device-detector](https://github.com/matomo-org/device-detector) release [**6.5.1**](https://github.com/matomo-org/device-detector/releases/tag/6.5.1). See [data/NOTICE.md](data/NOTICE.md).
 
 A scheduled workflow re-syncs the database from upstream monthly and opens a PR; the fixture gate then proves the Go code still reproduces upstream output on the new corpus. Manual sync: `make sync-upstream` or `scripts/sync-upstream.sh <ref>`.
 
@@ -108,7 +108,7 @@ A scheduled workflow re-syncs the database from upstream monthly and opens a PR;
 
 ```bash
 make test            # unit tests + short corpus
-make test-fixtures   # full 36k fixture corpus (~1 min)
+make test-fixtures   # full 37k fixture corpus (~1 min)
 make vet             # go vet
 make sync-upstream   # pull regex DB + fixtures from upstream
 ```
@@ -119,7 +119,7 @@ make sync-upstream   # pull regex DB + fixtures from upstream
 
 ## Roadmap
 
-- [ ] Client Hints support (v0.2) — all skipped branches are marked `TODO(client-hints)` in the source
+- [ ] Client Hints support (v0.3) — all skipped branches are marked `TODO(client-hints)` in the source
 - [ ] Performance pass — RE2 prefilter fast-path
 - [ ] Browser family / OS family surfacing parity review
 
