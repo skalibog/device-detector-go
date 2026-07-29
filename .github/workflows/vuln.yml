@@ -15,7 +15,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v7
         with:
-          go-version: "1.24"
+          # govulncheck@latest needs a recent Go to build; the test matrix
+          # covers the supported minimum separately.
+          go-version: "stable"
       - name: Vulnerability scan
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
