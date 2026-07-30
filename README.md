@@ -3,8 +3,8 @@
 [![CI](https://github.com/skalibog/device-detector-go/actions/workflows/ci.yml/badge.svg)](https://github.com/skalibog/device-detector-go/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/skalibog/device-detector-go.svg)](https://pkg.go.dev/github.com/skalibog/device-detector-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/skalibog/device-detector-go)](https://goreportcard.com/report/github.com/skalibog/device-detector-go)
-[![Upstream fixtures](https://img.shields.io/badge/upstream_fixtures-37%2C262_%2F_100%25-brightgreen)](#validation)
-[![Coverage](https://img.shields.io/badge/coverage-83%25-green)](#validation)
+[![Upstream fixtures](https://img.shields.io/badge/upstream_fixtures-37%2C640_%2F_100%25-brightgreen)](#validation)
+[![codecov](https://codecov.io/gh/skalibog/device-detector-go/graph/badge.svg)](https://codecov.io/gh/skalibog/device-detector-go)
 [![Go version](https://img.shields.io/github/go-mod/go-version/skalibog/device-detector-go)](go.mod)
 [![License: LGPL-3.0-or-later](https://img.shields.io/badge/license-LGPL--3.0--or--later-blue)](LICENSE)
 
@@ -113,7 +113,7 @@ Recommendations for high-volume callers:
 
 The regex database (`data/regexes/`) and test fixtures (`testdata/fixtures/`) are taken verbatim from [matomo/device-detector](https://github.com/matomo-org/device-detector) release [**6.5.1**](https://github.com/matomo-org/device-detector/releases/tag/6.5.1). See [data/NOTICE.md](data/NOTICE.md).
 
-A scheduled workflow re-syncs the database from upstream monthly and opens a PR; the fixture gate then proves the Go code still reproduces upstream output on the new corpus. Manual sync: `make sync-upstream` or `scripts/sync-upstream.sh <ref>`.
+A scheduled workflow re-syncs the database from the latest upstream release tag fortnightly and opens a PR; the fixture gate then proves the Go code still reproduces upstream output on the new corpus. Manual sync: `make sync-upstream` or `scripts/sync-upstream.sh <ref>`.
 
 ## Development
 
