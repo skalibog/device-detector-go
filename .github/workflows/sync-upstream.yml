@@ -2,11 +2,11 @@ name: Sync upstream regex database
 
 on:
   schedule:
-    - cron: "17 6 1 * *" # monthly
+    - cron: "17 6 1,15 * *" # ~fortnightly (1st and 15th)
   workflow_dispatch:
     inputs:
       ref:
-        description: matomo/device-detector ref to sync (default = pinned)
+        description: matomo/device-detector ref to sync (default = latest release tag)
         required: false
 
 permissions:
@@ -17,22 +17,43 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version: "1.24"
+      - name: Resolve upstream ref
+        id: ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Default to the latest upstream release TAG, not master: master gets
+          # brand additions near-daily, which would make the bit-identical
+          # corpus claim a moving target. Tags are stable, reproducible points.
+          REF="${{ inputs.ref }}"
+          if [ -z "$REF" ]; then
+            REF=$(gh api repos/matomo-org/device-detector/releases/latest --jq .tag_name)
+          fi
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
       - name: Sync regexes and fixtures
-        run: bash scripts/sync-upstream.sh ${{ inputs.ref || 'master' }}
+        run: bash scripts/sync-upstream.sh "${{ steps.ref.outputs.ref }}"
       - name: Validate against new corpus
         run: go test -count=1 -run TestFixtures -v . 2>&1 | tail -20
         continue-on-error: true
       - name: Open PR
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
-          branch: sync/upstream-regexes
-          title: "Sync regex database from matomo/device-detector"
-          commit-message: "Sync regex database from upstream"
+          branch: sync/upstream-${{ steps.ref.outputs.ref }}
+          title: "Sync regex database from matomo/device-detector ${{ steps.ref.outputs.ref }}"
+          commit-message: "Sync regex database from upstream ${{ steps.ref.outputs.ref }}"
           body: |
             Automated sync of `data/regexes/` and `testdata/fixtures/` from
-            matomo/device-detector. Check the CI fixture gate: mismatches mean
-            upstream added parser logic that needs porting.
+            matomo/device-detector **${{ steps.ref.outputs.ref }}**.
+
+            The CI fixture gate is the arbiter:
+            - 🟢 green — pure database update; safe to merge as a patch release.
+            - 🔴 red — upstream added parser logic (or a brand/OS that the
+              hand-mirrored Go tables in `internal/parser/*_data.go` lack) that
+              needs porting. See CONTRIBUTING.md and the local `upstream/` clone
+              (`git -C upstream diff <old-ref> ${{ steps.ref.outputs.ref }} -- 'Parser/**/*.php'`).
+
+            Remember to update the pin in README.md and data/NOTICE.md.

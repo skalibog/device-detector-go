@@ -10,7 +10,21 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 ## [Unreleased]
 
-### Added — hardening (v0.4)
+### Changed — supply chain
+
+- All GitHub Actions are pinned to full commit SHAs (with a `# vN` comment)
+  instead of floating tags, and `golangci-lint` is pinned to `v2.11.3` — closes
+  the mutable-third-party-action gap flagged by OpenSSF Scorecard.
+- Coverage is reported to [Codecov](https://codecov.io/gh/skalibog/device-detector-go)
+  tokenlessly via OIDC from the fixtures job (informational only — the fixture
+  gate remains the arbiter). README carries a live coverage badge.
+- The upstream-sync workflow now runs fortnightly (1st and 15th) and defaults to
+  the latest upstream **release tag** rather than `master`, so the corpus tracks
+  stable points instead of near-daily brand additions.
+
+## [0.4.0] - 2026-07-30
+
+### Added — hardening
 
 - `FuzzParse` fuzz target seeded from the fixture corpus, asserting Parse never
   panics, always returns a non-nil `Info`, reports only known device types,

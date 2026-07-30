@@ -1,0 +1,12 @@
+# Coverage is informational — it never blocks CI (the fixture gate is the real
+# signal). Codecov is wired tokenlessly via OIDC from the CI fixtures job.
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+comment: false
