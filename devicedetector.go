@@ -38,6 +38,7 @@ type DeviceDetector struct {
 	truncation       VersionTruncation
 	maxUALen         int
 	lazyCompile      bool
+	cache            *resultCache
 }
 
 // Option configures a DeviceDetector.
@@ -295,6 +296,30 @@ func (d *DeviceDetector) parse(ua string, hints *ClientHints) (*Info, error) {
 		ua = ua[:d.maxUALen]
 	}
 
+	if d.cache == nil {
+		return d.parseUncached(ua, hints)
+	}
+
+	// The cache key uses the already-truncated UA so oversized variants of the
+	// same prefix share an entry.
+	key := cacheKey(ua, hints)
+	if cached, ok := d.cache.get(key); ok {
+		return cached, nil
+	}
+
+	info, err := d.parseUncached(ua, hints)
+	// Errors (timeouts on adversarial input, broken external patterns) are
+	// deliberately not cached: they may be transient and the partial Info they
+	// carry is best-effort, not canonical.
+	if err == nil {
+		d.cache.put(key, info)
+	}
+
+	return info, err
+}
+
+// parseUncached runs the actual detection pipeline; ua is already truncated.
+func (d *DeviceDetector) parseUncached(ua string, hints *ClientHints) (*Info, error) {
 	info := &Info{UserAgent: ua, deviceType: DeviceTypeUnknown, chMobile: hints.IsMobile()}
 
 	// Skip empty/letterless user agents only when there are no client hints.

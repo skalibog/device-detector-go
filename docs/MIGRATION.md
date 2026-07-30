@@ -73,10 +73,10 @@ info, err := detector.ParseWithHints(request.UserAgent(), ch)
 ### Behavioural notes
 
 - **No per-result cache by default.** PHP can wrap parsed regexes in a PSR cache;
-  here the database is compiled once at `New()`. There is no built-in per-UA
-  result cache — real traffic repeats UAs heavily, so put a small LRU keyed by UA
-  hash in front if throughput matters. (An opt-in `WithResultCache` is on the
-  roadmap.)
+  here the database is compiled once at `New()` and the detector stays stateless.
+  For repeat-heavy traffic, opt into the built-in LRU with
+  `WithResultCache(n)` — results are cached per UA + client hints and returned
+  as isolated copies.
 - **Errors instead of empty results.** `Parse` returns an `error` for guard
   conditions (e.g. an over-length UA hitting `WithMaxUARawLength`); check it.
 - **Guards are on by default.** A 2048-byte length cap and a 1 s per-match

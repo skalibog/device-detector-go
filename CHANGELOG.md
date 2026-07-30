@@ -11,6 +11,16 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 ## [Unreleased]
 
+### Added
+
+- `WithResultCache(size)` — opt-in sharded LRU cache of parse results, keyed by
+  the (truncated) user agent plus client hints. A cache hit costs ~200 ns and
+  3 allocations versus ~1 ms+ for a full parse, which removes nearly all parse
+  cost on repeat-heavy traffic. Only successful parses are cached; returned
+  `Info` values are independent copies, so mutating a result can never poison
+  later lookups. Implemented on the standard library (no new dependencies);
+  disabled by default — the detector stays stateless unless opted in.
+
 ## [1.0.1] - 2026-07-30
 
 ### Changed — supply chain
