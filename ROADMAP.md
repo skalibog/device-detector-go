@@ -109,14 +109,17 @@ XL and touches the parity-sensitive capture-group extraction. It gets its own
 release and careful review rather than being rushed. It is the durable ReDoS
 fix and should take warm p99 parse well under 5 ms (from tens of ms).
 
-## v1.0.0 — Freeze
+## v1.0.0 — Freeze ✅ (2026-07-30)
 
-- Final API review; `apidiff` gate flips to hard-fail.
-- OpenSSF Scorecard workflow + badge (only after SHA-pinning + branch
-  protection land — a premature low score is worse than none).
-- README comparison table + `MIGRATION.md` from other Go UA parsers
-  (public-docs-only sourcing; clean-room hard rule).
-- Optional: Windows/macOS CI smoke; community pack (Discussions, labels).
+- [x] Final API review; `apidiff`/`gorelease` gate flipped to hard-fail
+  (`grep 'incompatible changes'` → exit 1). `gorelease` reports zero
+  incompatibilities against 0.4.1.
+- [x] OpenSSF Scorecard workflow + badge (landed after SHA-pinning in 0.4.1).
+- [x] README comparison table + `docs/MIGRATION.md` (from PHP matomo and from
+  lightweight Go UA parsers; public-docs-only sourcing; clean-room).
+- Deferred (non-blocking): branch protection (conflicts with the solo
+  direct-push flow — a maintainer decision); Windows/macOS CI smoke; community
+  pack (Discussions, labels).
 
 ---
 
