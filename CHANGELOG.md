@@ -10,6 +10,8 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-07-30
+
 ### Changed — supply chain
 
 - All GitHub Actions are pinned to full commit SHAs (with a `# vN` comment)
