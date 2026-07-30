@@ -43,6 +43,17 @@ jobs:
         # and under the race detector it exceeds hosted-runner budgets.
         run: go test -race -short -count=1 -skip TestFixtures -timeout 20m ./...
 
+  fuzz:
+    name: Fuzz smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.24"
+      - name: Fuzz Parse (60s)
+        run: go test -run='^$' -fuzz='FuzzParse$' -fuzztime=60s .
+
   apidiff:
     name: API compatibility
     runs-on: ubuntu-latest

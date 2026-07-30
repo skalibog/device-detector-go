@@ -10,6 +10,19 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 ## [Unreleased]
 
+### Added — hardening (v0.4)
+
+- `FuzzParse` fuzz target seeded from the fixture corpus, asserting Parse never
+  panics, always returns a non-nil `Info`, reports only known device types,
+  never leaks a `$N` capture-group placeholder, and stays time-bounded (a ReDoS
+  regression guard, e.g. after a database sync). CI runs a 60 s smoke on every
+  PR and a 30-minute nightly job that opens an issue on any crasher.
+- `docs/FAQ.md` — leads with the LGPL / Go static-linking question, plus regex
+  engine, database update policy, and untrusted-input notes.
+- `docs/BENCHMARKS.md` — reproducible benchmark methodology and current numbers.
+
+## [0.3.0] - 2026-07-29
+
 ### Added — Client Hints (v0.3)
 
 - Full HTTP Client Hints support. New `(*DeviceDetector).ParseWithHints(ua,
@@ -146,7 +159,8 @@ Also:
 - Client Hints are not yet supported; hints-dependent fixture entries are
   excluded from the corpus gate until v0.2.
 
-[Unreleased]: https://github.com/skalibog/device-detector-go/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/skalibog/device-detector-go/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/skalibog/device-detector-go/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/skalibog/device-detector-go/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/skalibog/device-detector-go/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/skalibog/device-detector-go/compare/v0.1.1...v0.1.2

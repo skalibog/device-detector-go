@@ -86,19 +86,28 @@ Watch: PHP type-coercion quirks are load-bearing (`(int)` version casts,
 
 ## v0.4.0 — Pre-1.0 hardening
 
-| Item | Effort | Gate? |
-|------|--------|-------|
-| RE2 stdlib-regexp prefilter fast-path, `regexp2` fallback for the 165/19,771 lookaround patterns (99.17% RE2-clean) | XL | perf, not correctness — the durable ReDoS fix |
-| `FuzzParse` seeded from fixture UAs (panic + invariant + <1s/exec assertions) | M | ✅ |
-| CI fuzz: 60 s smoke on PR, 30 m nightly cron | S | |
-| Reproducible benchmarks: stratified corpus sample + `benchstat` + `docs/BENCHMARKS.md`; correct README heap figure (measured 141 MB, not 110) | M | ✅ |
-| Real coverage (Codecov tokenless/OIDC) replacing the static 83% badge | S | ✅ |
-| `docs/FAQ.md` leading with the LGPL/static-linking answer | S | ✅ |
-| Pin-update policy: upstream tags only, quarterly cadence | S | ✅ |
-| SHA-pin GitHub Actions; pin golangci-lint version | S | |
+Done:
 
-Acceptance: warm p99 parse <5 ms (from 43.8 ms), max <15 ms (from 84 ms);
-`-fuzztime=1h` clean; benchmarks reproducible from repo.
+- [x] `FuzzParse` seeded from fixture UAs (no-panic, non-nil Info, known device
+      type, no `$N` placeholder leak, time-bounded).
+- [x] CI fuzz: 60 s smoke on every PR, 30 m nightly cron that opens an issue on
+      a crasher.
+- [x] `docs/FAQ.md` — leads with the LGPL / Go static-linking answer.
+- [x] `docs/BENCHMARKS.md` — reproducible methodology + current numbers.
+
+Remaining (candidates for follow-up minor releases):
+
+- [ ] Real coverage (Codecov tokenless/OIDC) replacing the static 83% badge.
+- [ ] SHA-pin GitHub Actions; pin golangci-lint version.
+- [ ] Bi-weekly, tag-driven upstream-sync cron + static-table diff tooling.
+
+## v0.5.0 — RE2 prefilter (perf)
+
+Deferred here deliberately: the RE2 stdlib-regexp prefilter fast-path (with a
+`regexp2` fallback for the 165/19,771 lookaround patterns; 99.17% RE2-clean) is
+XL and touches the parity-sensitive capture-group extraction. It gets its own
+release and careful review rather than being rushed. It is the durable ReDoS
+fix and should take warm p99 parse well under 5 ms (from tens of ms).
 
 ## v1.0.0 — Freeze
 

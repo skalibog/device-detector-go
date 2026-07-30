@@ -99,7 +99,7 @@ The test suite replays the upstream fixture corpus — **37,640 user agents (use
 
 The port keeps upstream's design: a big regex alternation walked with a backtracking engine ([dlclark/regexp2](https://github.com/dlclark/regexp2)), because the database uses PCRE features Go's RE2 `regexp` cannot express.
 
-Measured on the full diverse corpus (32 workers, warm caches): ~640 parses/sec sustained, from ~1.5 ms for early-exit UAs (bots, desktops) up to tens of ms for long-tail mobile UAs. Detector heap footprint is ~50 MB warm, ~110 MB with every model regex lazily compiled (bounded by database size — it is a cache, not a leak).
+Indicatively (Ryzen 9950X): ~1 ms/parse across goroutines, from ~1–2 ms for early-exit UAs (bots, desktops) up to tens of ms for long-tail mobile UAs; warm heap ~50 MB. Reproduce and see methodology in [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
 Because the engine backtracks, oversized crafted user agents can be expensive. Two guards are on by default (see [SECURITY.md](SECURITY.md)): a 2048-byte length cap (`WithMaxUARawLength`) and a 1 s per-match timeout (`WithMatchTimeout`), which together bound a ~24 KB junk input from ~60 s to ~1 s without affecting genuine traffic.
 
@@ -136,7 +136,7 @@ make sync-upstream   # pull regex DB + fixtures from upstream
 
 ## License
 
-LGPL-3.0-or-later, same as the original library — this port is a derivative work of matomo/device-detector.
+LGPL-3.0-or-later, same as the original library — this port is a derivative work of matomo/device-detector. What that means for a statically-linked Go binary (short answer: it's fine for server-side use and for shipping a binary while publishing the pinned library version) is covered in the [FAQ](docs/FAQ.md).
 
 - Original library and regex database: Copyright (C) [Matomo Team](https://matomo.org)
 - Go port: Copyright (C) 2026 skalibog
