@@ -11,6 +11,8 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-30
+
 ### Added
 
 - `WithResultCache(size)` — opt-in sharded LRU cache of parse results, keyed by
