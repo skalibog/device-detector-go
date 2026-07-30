@@ -173,10 +173,11 @@ func TestResultCacheEviction(t *testing.T) {
 }
 
 func TestResultCacheLRUOrder(t *testing.T) {
-	c := newShardedLRU(resultCacheShards) // capacity 1 per shard
+	c := newShardedLRU(2 * resultCacheShards) // capacity 2 per shard
 
-	// Two keys landing in the same shard: after touching the first, inserting
-	// a third same-shard key must evict the untouched one. Find same-shard keys.
+	// Three keys landing in the same shard. Fill both slots, touch the older
+	// entry via Get, then insert a third: the untouched (least recently used)
+	// entry must be the one evicted.
 	shard := c.shardFor("a")
 
 	keys := []string{"a"}
@@ -188,14 +189,22 @@ func TestResultCacheLRUOrder(t *testing.T) {
 	}
 
 	c.Put(keys[0], &Info{UserAgent: keys[0]})
-	c.Put(keys[1], &Info{UserAgent: keys[1]}) // capacity 1: evicts keys[0]
+	c.Put(keys[1], &Info{UserAgent: keys[1]})
 
-	if _, ok := c.Get(keys[0]); ok {
-		t.Fatal("expected keys[0] evicted at capacity 1")
+	if _, ok := c.Get(keys[0]); !ok { // refresh keys[0] — keys[1] becomes LRU
+		t.Fatal("expected keys[0] cached before eviction")
 	}
 
-	if got, ok := c.Get(keys[1]); !ok || got.UserAgent != keys[1] {
-		t.Fatalf("expected keys[1] cached, got %v ok=%v", got, ok)
+	c.Put(keys[2], &Info{UserAgent: keys[2]}) // over capacity: must evict keys[1]
+
+	if _, ok := c.Get(keys[1]); ok {
+		t.Fatal("expected untouched keys[1] evicted, but it survived")
+	}
+
+	for _, k := range []string{keys[0], keys[2]} {
+		if got, ok := c.Get(k); !ok || got.UserAgent != k {
+			t.Fatalf("expected %q cached, got %v ok=%v", k, got, ok)
+		}
 	}
 }
 

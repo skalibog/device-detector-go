@@ -304,7 +304,9 @@ func (d *DeviceDetector) parse(ua string, hints *ClientHints) (*Info, error) {
 	// same prefix share an entry. Cloning at both boundaries keeps isolation
 	// backend-agnostic: the backend only ever holds pointers no caller has.
 	key := cacheKey(ua, hints)
-	if cached, ok := d.cache.Get(key); ok {
+	// The nil guard treats a buggy backend's (nil, true) as a miss instead of
+	// panicking in clone.
+	if cached, ok := d.cache.Get(key); ok && cached != nil {
 		return cached.clone(), nil
 	}
 

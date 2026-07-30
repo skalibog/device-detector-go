@@ -24,9 +24,9 @@ type ResultCache interface {
 // WithResultCache adds the built-in in-memory sharded LRU cache of parse
 // results, keyed by the (truncated) user agent plus client hints. Real traffic
 // repeats user agents heavily, so a modest cache (tens of thousands of
-// entries) removes nearly all parse cost on hot paths; size is the maximum
-// number of cached entries and n <= 0 leaves caching disabled (the default —
-// the detector stays stateless).
+// entries) removes nearly all parse cost on hot paths; size is the target
+// capacity, rounded up to a multiple of the internal shard count (16), and
+// n <= 0 leaves caching disabled (the default — the detector stays stateless).
 //
 // Only successful parses are cached; errors (e.g. a match timeout on
 // adversarial input) are always recomputed. Returned Info values are
