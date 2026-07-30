@@ -33,7 +33,14 @@ jobs:
           if [ -z "$REF" ]; then
             REF=$(gh api repos/matomo-org/device-detector/releases/latest --jq .tag_name)
           fi
-          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          # inputs.ref is user-controlled; collapse to the first line and keep
+          # only tag-safe characters to avoid GITHUB_OUTPUT injection.
+          REF=$(printf '%s' "$REF" | head -n1 | tr -cd 'A-Za-z0-9._-')
+          if [ -z "$REF" ]; then
+            echo "::error::empty or invalid upstream ref" >&2
+            exit 1
+          fi
+          printf 'ref=%s\n' "$REF" >> "$GITHUB_OUTPUT"
       - name: Sync regexes and fixtures
         run: bash scripts/sync-upstream.sh "${{ steps.ref.outputs.ref }}"
       - name: Validate against new corpus
