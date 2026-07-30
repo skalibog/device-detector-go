@@ -8,6 +8,9 @@ on:
     - cron: "23 5 * * 1" # weekly — vulnerabilities surface without commits
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   govulncheck:
     runs-on: ubuntu-latest
