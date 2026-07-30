@@ -107,7 +107,8 @@ Because the engine backtracks, oversized crafted user agents can be expensive. T
 
 Recommendations for high-volume callers:
 
-- **Enable the result cache** — `WithResultCache(n)` adds a built-in sharded LRU keyed by UA + client hints; real traffic repeats UAs heavily, and a cache hit costs ~200 ns instead of ~1 ms+. Cached results are isolated copies, and only successful parses are stored.
+- **Enable the result cache** — `WithResultCache(n)` adds a built-in sharded LRU keyed by UA + client hints; real traffic repeats UAs heavily, and a cache hit costs ~200 ns instead of ~1 ms+. Cached results are isolated copies, and only successful parses are stored. At 4k RPS the arithmetic is stark: uncached needs 4–60 CPU-cores just for parsing; a 95–99% hit rate reduces that to a fraction of one core.
+- **Bring your own eviction policy** — `WithResultCacheBackend(c)` accepts any `ResultCache` implementation. Under churn-heavy traffic (randomising bot UAs flooding the cache with one-hit wonders) a scan-resistant policy like SIEVE beats LRU at keeping hot entries alive; see the compiled adapter in [examples/sievecache](examples/sievecache/) (separate module — the dependency never enters this library's graph).
 - **For untrusted input**, tighten the guards (e.g. `WithMaxUARawLength(512)`, `WithMatchTimeout(100*time.Millisecond)`).
 - A performance pass (RE2 prefilter fast-path for the common alternations) is on the roadmap.
 

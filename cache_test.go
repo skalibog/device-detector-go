@@ -147,10 +147,10 @@ func TestResultCacheReturnsIsolatedCopies(t *testing.T) {
 func TestResultCacheEviction(t *testing.T) {
 	// Tiny cache: per-shard capacity is 1, so inserting many keys must evict
 	// old entries instead of growing without bound.
-	c := newResultCache(1)
+	c := newShardedLRU(1)
 
 	for i := 0; i < 1000; i++ {
-		c.put(fmt.Sprintf("key-%d", i), &Info{UserAgent: "x"})
+		c.Put(fmt.Sprintf("key-%d", i), &Info{UserAgent: "x"})
 	}
 
 	total := 0
@@ -173,7 +173,7 @@ func TestResultCacheEviction(t *testing.T) {
 }
 
 func TestResultCacheLRUOrder(t *testing.T) {
-	c := newResultCache(resultCacheShards) // capacity 1 per shard
+	c := newShardedLRU(resultCacheShards) // capacity 1 per shard
 
 	// Two keys landing in the same shard: after touching the first, inserting
 	// a third same-shard key must evict the untouched one. Find same-shard keys.
@@ -187,15 +187,76 @@ func TestResultCacheLRUOrder(t *testing.T) {
 		}
 	}
 
-	c.put(keys[0], &Info{UserAgent: keys[0]})
-	c.put(keys[1], &Info{UserAgent: keys[1]}) // capacity 1: evicts keys[0]
+	c.Put(keys[0], &Info{UserAgent: keys[0]})
+	c.Put(keys[1], &Info{UserAgent: keys[1]}) // capacity 1: evicts keys[0]
 
-	if _, ok := c.get(keys[0]); ok {
+	if _, ok := c.Get(keys[0]); ok {
 		t.Fatal("expected keys[0] evicted at capacity 1")
 	}
 
-	if got, ok := c.get(keys[1]); !ok || got.UserAgent != keys[1] {
+	if got, ok := c.Get(keys[1]); !ok || got.UserAgent != keys[1] {
 		t.Fatalf("expected keys[1] cached, got %v ok=%v", got, ok)
+	}
+}
+
+// mapBackend is a minimal custom ResultCache: unbounded map, no cloning of its
+// own — isolation must come entirely from the detector's boundary clones.
+type mapBackend struct {
+	mu   sync.Mutex
+	m    map[string]*Info
+	hits int
+}
+
+func (b *mapBackend) Get(key string) (*Info, bool) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	info, ok := b.m[key]
+	if ok {
+		b.hits++
+	}
+
+	return info, ok
+}
+
+func (b *mapBackend) Put(key string, info *Info) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.m[key] = info
+}
+
+func TestResultCacheCustomBackend(t *testing.T) {
+	backend := &mapBackend{m: make(map[string]*Info)}
+
+	d, err := New(WithResultCacheBackend(backend))
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	first, err := d.Parse(cacheTestUA)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The backend stores raw pointers; caller mutations must still not reach it
+	// because the detector clones at both cache boundaries.
+	first.Client().Name = "poisoned"
+
+	second, err := d.Parse(cacheTestUA)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if second.Client().Name == "poisoned" {
+		t.Error("custom backend poisoned by caller mutation — boundary clone missing")
+	}
+
+	backend.mu.Lock()
+	hits := backend.hits
+	backend.mu.Unlock()
+
+	if hits != 1 {
+		t.Errorf("expected exactly 1 backend hit, got %d", hits)
 	}
 }
 

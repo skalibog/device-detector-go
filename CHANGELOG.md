@@ -20,6 +20,13 @@ Each release also notes the pinned matomo/device-detector database commit it shi
   `Info` values are independent copies, so mutating a result can never poison
   later lookups. Implemented on the standard library (no new dependencies);
   disabled by default — the detector stays stateless unless opted in.
+- `ResultCache` interface + `WithResultCacheBackend(c)` — plug in your own
+  eviction policy (SIEVE, TTL, ristretto, ...). The detector clones at the
+  cache boundary for every backend, so isolation guarantees hold regardless of
+  implementation. A compiled SIEVE adapter lives in `examples/sievecache`
+  (separate Go module — its dependency never enters this library's graph);
+  SIEVE's scan-resistance makes it the better policy under churn-heavy traffic
+  such as randomising bot UAs.
 
 ## [1.0.1] - 2026-07-30
 

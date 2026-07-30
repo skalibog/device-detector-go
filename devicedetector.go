@@ -38,7 +38,7 @@ type DeviceDetector struct {
 	truncation       VersionTruncation
 	maxUALen         int
 	lazyCompile      bool
-	cache            *resultCache
+	cache            ResultCache
 }
 
 // Option configures a DeviceDetector.
@@ -301,10 +301,11 @@ func (d *DeviceDetector) parse(ua string, hints *ClientHints) (*Info, error) {
 	}
 
 	// The cache key uses the already-truncated UA so oversized variants of the
-	// same prefix share an entry.
+	// same prefix share an entry. Cloning at both boundaries keeps isolation
+	// backend-agnostic: the backend only ever holds pointers no caller has.
 	key := cacheKey(ua, hints)
-	if cached, ok := d.cache.get(key); ok {
-		return cached, nil
+	if cached, ok := d.cache.Get(key); ok {
+		return cached.clone(), nil
 	}
 
 	info, err := d.parseUncached(ua, hints)
@@ -312,7 +313,7 @@ func (d *DeviceDetector) parse(ua string, hints *ClientHints) (*Info, error) {
 	// deliberately not cached: they may be transient and the partial Info they
 	// carry is best-effort, not canonical.
 	if err == nil {
-		d.cache.put(key, info)
+		d.cache.Put(key, info.clone())
 	}
 
 	return info, err
