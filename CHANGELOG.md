@@ -11,6 +11,8 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-07-30
+
 ### Changed — supply chain
 
 - All workflows now declare a least-privilege top-level `permissions` block
