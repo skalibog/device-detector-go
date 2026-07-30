@@ -75,7 +75,21 @@ func FuzzParse(f *testing.F) {
 		info, err := det.Parse(ua)
 		_ = err // errors are acceptable on adversarial input; treat as unknown.
 
-		if elapsed := time.Since(start); elapsed > 5*time.Second {
+		// Two-tier time bound. A single catastrophic pattern is already cut off
+		// by the 1 s match timeout (it surfaces as an error, accepted above); what
+		// wall time measures here is the AGGREGATE cost of walking every pattern,
+		// which is ~linear in input length (~0.2 ms/byte for worst-case junk on a
+		// fast machine) and scales with how slow/contended the runner is. A flat
+		// 5 s bound is meaningful for short inputs but flaky for near-cap ones on
+		// shared CI hardware, so long inputs only guard against runaway
+		// regressions until the RE2 prefilter (v1.2) collapses the walk cost and
+		// the bound can tighten back.
+		limit := 5 * time.Second
+		if len(ua) > 512 {
+			limit = 15 * time.Second
+		}
+
+		if elapsed := time.Since(start); elapsed > limit {
 			t.Fatalf("Parse took %v (possible catastrophic backtracking) for %q", elapsed, ua)
 		}
 

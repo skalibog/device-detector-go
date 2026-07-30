@@ -28,6 +28,17 @@ Each release also notes the pinned matomo/device-detector database commit it shi
   SIEVE's scan-resistance makes it the better policy under churn-heavy traffic
   such as randomising bot UAs.
 
+### Fixed
+
+- CI fuzzing surfaced a worst-case input class (near-cap unclosed junk, e.g.
+  `MSIE …; T` + 2 KB of filler) where walking the full pattern set costs
+  ~0.2 ms/byte — ~450 ms per parse on fast hardware, several seconds on slow
+  shared runners. No single pattern backtracks catastrophically (the 1 s match
+  timeout stands); the cost is the aggregate walk, which the planned RE2
+  prefilter (v1.2) addresses. Until then the fuzz time bound is two-tier (5 s
+  for ≤512-byte inputs, 15 s above) and the crasher is committed as a
+  regression seed.
+
 ## [1.0.1] - 2026-07-30
 
 ### Changed — supply chain
