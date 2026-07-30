@@ -16,6 +16,7 @@ jobs:
     name: Scorecard analysis
     runs-on: ubuntu-latest
     permissions:
+      contents: read # job-level perms replace (not merge) read-all above; keep read for checkout
       security-events: write # upload SARIF to code scanning
       id-token: write # publish results to the public Scorecard API (badge)
     steps:

@@ -13,9 +13,9 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 ### Changed — supply chain
 
-- All workflows now declare least-privilege top-level `permissions: contents:
-  read`, with write scopes narrowed to the specific jobs that need them
-  (releases, sync PRs, fuzz-crash issues) — raises the OpenSSF Scorecard
+- All workflows now declare a least-privilege top-level `permissions` block
+  (`contents: read`), with write scopes narrowed to the specific jobs that need
+  them (releases, sync PRs, fuzz-crash issues) — raises the OpenSSF Scorecard
   *Token-Permissions* check.
 - Added a CodeQL (`security-and-quality`) SAST workflow feeding GitHub code
   scanning — raises the Scorecard *SAST* check.
