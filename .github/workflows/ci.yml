@@ -29,6 +29,11 @@ jobs:
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9
         with:
           version: v2.11.3
+      - name: Examples (sievecache backend)
+        # Separate module (own go.mod) so the example's third-party cache dep
+        # never enters the root module's dependency graph.
+        working-directory: examples/sievecache
+        run: go test -count=1 ./...
 
   test:
     name: Tests (Go ${{ matrix.go }})

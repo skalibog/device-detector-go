@@ -128,8 +128,9 @@ fix and should take warm p99 parse well under 5 ms (from tens of ms).
 - **`goccy/go-yaml` migration** (yaml.v3 is archived but functional, no CVE) —
   not a 1.0 blocker; a standalone PR gated on the unchanged corpus. `OrderedMap`
   and the `flexString` verbatim-scalar path are the high-risk spots.
-- **In-library result LRU** (`WithResultCache`) — biggest throughput lever for
-  repeat-heavy RTB traffic, but opt-in; core stays pure/stateless by default.
+- **In-library result LRU** (`WithResultCache`) — ✅ shipped in v1.1.0: sharded
+  stdlib LRU, keyed by UA + client hints, isolated copies, opt-in; core stays
+  pure/stateless by default.
 - **Non-goals** (recorded so they aren't cargo-culted): GoReleaser (no
   binaries), SLSA attestations (no artifacts), CODEOWNERS (solo maintainer).
 

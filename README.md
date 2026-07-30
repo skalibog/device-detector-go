@@ -67,6 +67,7 @@ dd.New(dd.WithVersionTruncation(dd.VersionTruncationNone)) // full versions (def
 dd.New(dd.WithSkipBotDetection())                          // skip the bot stage
 dd.New(dd.WithMaxUARawLength(512))                         // tighter length cap (see SECURITY.md)
 dd.New(dd.WithLazyCompile())                               // defer compilation; faster New, no fail-fast
+dd.New(dd.WithResultCache(65536))                          // LRU result cache; big win on repeat-heavy traffic
 dd.NewFromDir("path/to/regexes")                           // external regex database
 ```
 
@@ -106,7 +107,8 @@ Because the engine backtracks, oversized crafted user agents can be expensive. T
 
 Recommendations for high-volume callers:
 
-- **Cache results by UA hash** — real traffic repeats UAs heavily; a small LRU in front removes nearly all parse cost.
+- **Enable the result cache** — `WithResultCache(n)` adds a built-in sharded LRU keyed by UA + client hints; real traffic repeats UAs heavily, and a cache hit costs ~200 ns instead of ~1 ms+. Cached results are isolated copies, and only successful parses are stored. At 4k RPS the arithmetic is stark: uncached needs 4–60 CPU-cores just for parsing; a 95–99% hit rate reduces that to a fraction of one core.
+- **Bring your own eviction policy** — `WithResultCacheBackend(c)` accepts any `ResultCache` implementation. Under churn-heavy traffic (randomising bot UAs flooding the cache with one-hit wonders) a scan-resistant policy like SIEVE beats LRU at keeping hot entries alive; see the compiled adapter in [examples/sievecache](examples/sievecache/) (separate module — the dependency never enters this library's graph).
 - **For untrusted input**, tighten the guards (e.g. `WithMaxUARawLength(512)`, `WithMatchTimeout(100*time.Millisecond)`).
 - A performance pass (RE2 prefilter fast-path for the common alternations) is on the roadmap.
 
@@ -156,8 +158,8 @@ make sync-upstream   # pull regex DB + fixtures from upstream
 
 - [x] Client Hints support — `ParseWithHints`
 - [x] 1.0 — frozen API (`apidiff` hard gate), OpenSSF Scorecard, migration guide
-- [ ] Performance pass — RE2 prefilter fast-path (v1.1)
-- [ ] Opt-in result cache — `WithResultCache`
+- [x] Opt-in result cache — `WithResultCache` (v1.1)
+- [ ] Performance pass — RE2 prefilter fast-path (v1.2)
 
 ## License
 
