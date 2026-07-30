@@ -4,11 +4,37 @@ All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-Until v1.0.0, minor releases may contain breaking API changes; patch releases never do.
+From 1.0.0 the public API is stable: minor releases add features compatibly, patch
+releases fix bugs, and any incompatible change would require a new major (`/vN`).
 
 Each release also notes the pinned matomo/device-detector database commit it ships.
 
 ## [Unreleased]
+
+## [1.0.0] - 2026-07-30
+
+First stable release. The public API is frozen: within the 1.x line there will be
+no incompatible changes, enforced in CI. No code behaviour changes from 0.4.1 —
+this release is the compatibility promise plus the governance to keep it.
+
+### Added
+
+- `docs/MIGRATION.md` — moving from the PHP `matomo/device-detector` (accessor and
+  option mapping, lifecycle and behavioural differences) and from lightweight Go
+  UA parsers.
+- README comparison table against common Go User-Agent libraries.
+- OpenSSF Scorecard workflow and badge (supply-chain posture, published results).
+
+### Changed
+
+- `apidiff`/`gorelease` is now a **hard CI gate**: an incompatible change against
+  the latest release fails the build instead of being informational. Additive
+  ("compatible") changes still pass.
+
+### Stability
+
+- API frozen since 0.2.0 and unchanged since; `gorelease` reports zero
+  incompatibilities against 0.4.1.
 
 ## [0.4.1] - 2026-07-30
 

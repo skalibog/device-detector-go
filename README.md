@@ -5,6 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/skalibog/device-detector-go)](https://goreportcard.com/report/github.com/skalibog/device-detector-go)
 [![Upstream fixtures](https://img.shields.io/badge/upstream_fixtures-37%2C640_%2F_100%25-brightgreen)](#validation)
 [![codecov](https://codecov.io/gh/skalibog/device-detector-go/graph/badge.svg)](https://codecov.io/gh/skalibog/device-detector-go)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/skalibog/device-detector-go/badge)](https://scorecard.dev/viewer/?uri=github.com/skalibog/device-detector-go)
 [![Go version](https://img.shields.io/github/go-mod/go-version/skalibog/device-detector-go)](go.mod)
 [![License: LGPL-3.0-or-later](https://img.shields.io/badge/license-LGPL--3.0--or--later-blue)](LICENSE)
 
@@ -109,6 +110,29 @@ Recommendations for high-volume callers:
 - **For untrusted input**, tighten the guards (e.g. `WithMaxUARawLength(512)`, `WithMatchTimeout(100*time.Millisecond)`).
 - A performance pass (RE2 prefilter fast-path for the common alternations) is on the roadmap.
 
+## Comparison
+
+Where this port sits among Go User-Agent libraries. It trades a bigger embedded
+database and a backtracking engine for breadth and byte-for-byte parity with
+matomo; the lightweight parsers trade coverage for a tiny footprint and raw
+speed. Functional summary from each project's public documentation:
+
+| | device-detector-go | [mssola/user_agent](https://github.com/mssola/user_agent) | [mileusna/useragent](https://github.com/mileusna/useragent) | [ua-parser/uap-go](https://github.com/ua-parser/uap-go) |
+|---|---|---|---|---|
+| Data source | matomo database (embedded) | built-in heuristics | built-in heuristics | uap-core regexes |
+| Device brand + model | ✅ 2,000+ brands | — | — | partial (uap-core) |
+| Device type | ✅ 14 types | — | basic | ✅ |
+| Bots | ✅ 800+ | basic | basic | limited |
+| Browser engine + version | ✅ | engine only | — | — |
+| OS family | ✅ | — | — | ✅ |
+| Client Hints | ✅ | — | — | — |
+| Upstream parity gate | ✅ full corpus | n/a | n/a | n/a |
+| Dependencies | regexp2 | none | none | yaml |
+| Engine | PCRE (backtracking) | native | native | RE2 |
+
+Migrating from any of these (or from the PHP original) is covered in
+[docs/MIGRATION.md](docs/MIGRATION.md).
+
 ## Data provenance and updates
 
 The regex database (`data/regexes/`) and test fixtures (`testdata/fixtures/`) are taken verbatim from [matomo/device-detector](https://github.com/matomo-org/device-detector) release [**6.5.1**](https://github.com/matomo-org/device-detector/releases/tag/6.5.1). See [data/NOTICE.md](data/NOTICE.md).
@@ -126,13 +150,14 @@ make sync-upstream   # pull regex DB + fixtures from upstream
 
 ## Versioning
 
-[SemVer](https://semver.org) via git tags; see [CHANGELOG.md](CHANGELOG.md). Until v1.0.0 minor releases may change the API; patch releases are safe (including database-only refreshes). Each release notes the pinned upstream database commit. Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+[SemVer](https://semver.org) via git tags; see [CHANGELOG.md](CHANGELOG.md). From v1.0.0 the API is stable within the 1.x line — minor releases add features compatibly, patch releases fix bugs or refresh the database, and an incompatible change would require a new major (`/vN`). This is enforced in CI by a `gorelease` gate. Each release notes the pinned upstream database commit. Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Roadmap
 
 - [x] Client Hints support — `ParseWithHints`
-- [ ] Performance pass — RE2 prefilter fast-path
-- [ ] Browser family / OS family surfacing parity review
+- [x] 1.0 — frozen API (`apidiff` hard gate), OpenSSF Scorecard, migration guide
+- [ ] Performance pass — RE2 prefilter fast-path (v1.1)
+- [ ] Opt-in result cache — `WithResultCache`
 
 ## License
 
