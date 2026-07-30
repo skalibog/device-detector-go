@@ -77,6 +77,12 @@ jobs:
             echo "::error::Incompatible API changes vs the latest release — needs a major (/vN) bump"
             exit 1
           fi
+          # Fail closed: if gorelease didn't produce a comparison at all (network,
+          # module resolution, internal error) the grep above would pass silently.
+          if ! echo "$out" | grep -qiE 'suggested version|# summary'; then
+            echo "::error::gorelease produced no compatibility report — gate inconclusive"
+            exit 1
+          fi
 
   fixtures:
     name: Upstream fixture corpus

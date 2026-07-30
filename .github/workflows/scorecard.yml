@@ -5,7 +5,7 @@ on:
   schedule:
     - cron: "41 5 * * 1" # weekly — supply-chain posture drifts without commits
   push:
-    branches: [master]
+    branches: [main, master] # whichever is the default branch
   workflow_dispatch:
 
 # Restrict token to the minimum; the analysis job opts back in explicitly.

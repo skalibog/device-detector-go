@@ -7,8 +7,8 @@ are in the *shape* of the API, not in what it detects.
 
 ## From PHP `matomo/device-detector`
 
-The Go API mirrors the PHP one one-to-one; the main structural change is that a
-detector is built once and reused, not constructed per request.
+The Go API maps to the PHP one accessor-for-accessor; the main structural change
+is that a detector is built once and reused, not constructed per request.
 
 ### Lifecycle
 
@@ -28,6 +28,11 @@ info, err := detector.Parse(userAgent)
 allocate one per request. `Parse` returns a fresh, self-contained `Info` value.
 
 ### Accessor mapping
+
+> **Nil check.** `info.Client()`, `info.OS()` and `info.Bot()` return `nil` when
+> that facet was not detected (PHP returns an empty array instead). Guard before
+> dereferencing — `if c := info.Client(); c != nil { … c.Name … }` — or use the
+> boolean helpers (`info.IsBot()`, `info.IsMobile()`) which are nil-safe.
 
 | PHP | Go |
 |---|---|
