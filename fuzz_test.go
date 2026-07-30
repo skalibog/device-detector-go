@@ -89,6 +89,13 @@ func FuzzParse(f *testing.F) {
 			limit = 15 * time.Second
 		}
 
+		// Under the race detector regexp2 backtracking runs 10-20x slower, so a
+		// tight wall-time bound would only measure the instrumentation; keep a
+		// generous hang backstop there.
+		if raceEnabled {
+			limit = 5 * time.Minute
+		}
+
 		if elapsed := time.Since(start); elapsed > limit {
 			t.Fatalf("Parse took %v (possible catastrophic backtracking) for %q", elapsed, ua)
 		}
