@@ -18,10 +18,11 @@ Each release also notes the pinned matomo/device-detector database commit it shi
   kills a worker spending ~10 s on one input — which near-cap aggregate-walk
   junk does on slow runners — before any test assertion can fire; the
   full-length worst case moved to an explicit `TestAggregateWalkSeed`
-  regression test. The placeholder-leak assertion no longer fires for user
-  agents that themselves contain `$N` (e.g. `HUAWEI$0 Build` → model `$0` is
-  upstream parity — `buildByMatch` is a literal `str_replace` — not a template
-  leak).
+  regression test. The placeholder-leak assertion is now per-token: a `$N` in
+  a result only counts as a leak when that exact token is absent from the
+  input, because a UA carrying a literal `$N` flows it into results through
+  capture groups (e.g. `HUAWEI$0 Build` → model `$0`) — upstream parity
+  (`buildByMatch` is a literal `str_replace`), not a template leak.
 
 ## [1.1.0] - 2026-07-30
 

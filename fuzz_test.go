@@ -114,22 +114,29 @@ func FuzzParse(f *testing.F) {
 
 		// A UA containing a literal "$N" legitimately flows into results through
 		// capture groups (e.g. "HUAWEI$0 Build" -> model "$0") — upstream's
-		// buildByMatch is a plain str_replace, so this is parity, not a leak.
-		// Only inputs without "$" can prove a template placeholder leaked.
-		if strings.Contains(ua, "$") {
-			return
+		// buildByMatch is a plain str_replace, so this is parity, not a leak. A
+		// "$N" token in a result is therefore a leak only when that exact token
+		// never appeared in the input.
+		leaked := func(field string) bool {
+			for _, tok := range placeholderRe.FindAllString(field, -1) {
+				if !strings.Contains(ua, tok) {
+					return true
+				}
+			}
+
+			return false
 		}
 
 		if info.Client() != nil {
 			c := info.Client()
 			for _, field := range []string{c.Name, c.Version, c.Engine, c.EngineVersion} {
-				if placeholderRe.MatchString(field) {
+				if leaked(field) {
 					t.Fatalf("client field %q leaked a capture-group placeholder for %q", field, ua)
 				}
 			}
 		}
 
-		if placeholderRe.MatchString(info.Model()) || placeholderRe.MatchString(info.Brand()) {
+		if leaked(info.Model()) || leaked(info.Brand()) {
 			t.Fatalf("device brand/model leaked a placeholder (brand=%q model=%q) for %q", info.Brand(), info.Model(), ua)
 		}
 	})
