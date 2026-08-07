@@ -64,6 +64,7 @@ var cypressPhantomRegex = regexp.MustCompile(`Cypress|PhantomJS`)
 // their rendering engine and engine version.
 type Browser struct {
 	entries    []browserEntry
+	gateSet    *parser.GateSet
 	engine     *Engine
 	appHints   map[string]string // client/hints/browsers.yml: app id -> browser name
 	truncation int
@@ -87,8 +88,14 @@ func NewBrowser(fsys fs.FS) (*Browser, error) {
 		return nil, err
 	}
 
+	patterns := make([]string, len(entries))
+	for i := range entries {
+		patterns[i] = entries[i].Regex
+	}
+
 	return &Browser{
 		entries:    entries,
+		gateSet:    parser.CompileGateSet(patterns),
 		engine:     engine,
 		appHints:   appHints,
 		truncation: parser.VersionTruncationMinor,
@@ -357,17 +364,41 @@ func (b *Browser) parseFromUserAgent(ua string) (uaBrowser, error) {
 		entry   *browserEntry
 	)
 
-	for i := range b.entries {
+	try := func(i int) (bool, error) {
 		m, err := parser.MatchUserAgent(ua, b.entries[i].Regex)
-		if err != nil {
-			return uaBrowser{}, err
+		if err != nil || m == nil {
+			return false, err
 		}
 
-		if m != nil {
-			matches = m
-			entry = &b.entries[i]
+		matches = m
+		entry = &b.entries[i]
 
-			break
+		return true, nil
+	}
+
+	// Required-literal probes over the lowercased UA: walk only the entries
+	// whose literal occurs (plus the few with no provable literal cover).
+	if only, ok := b.gateSet.SkipGated(ua); ok {
+		for _, i := range only {
+			hit, err := try(i)
+			if err != nil {
+				return uaBrowser{}, err
+			}
+
+			if hit {
+				break
+			}
+		}
+	} else {
+		for i := range b.entries {
+			hit, err := try(i)
+			if err != nil {
+				return uaBrowser{}, err
+			}
+
+			if hit {
+				break
+			}
 		}
 	}
 

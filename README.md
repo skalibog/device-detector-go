@@ -99,18 +99,17 @@ The test suite replays the upstream fixture corpus — **37,640 user agents (use
 
 ## Performance
 
-The port keeps upstream's design: a big regex alternation walked with a backtracking engine ([dlclark/regexp2](https://github.com/dlclark/regexp2)), because the database uses PCRE features Go's RE2 `regexp` cannot express.
+The authoritative engine is a backtracking one ([dlclark/regexp2](https://github.com/dlclark/regexp2)), because the database uses PCRE features Go's RE2 `regexp` cannot express — but since v1.2 it hides behind a two-layer RE2/literal **prefilter** that answers "could this pattern possibly match?" in linear time. 99%+ of patterns carry a superset RE2 gate, and the big per-entry walks (device brands, OS rules, browsers) are first narrowed by required-literal probes extracted from each regex AST. A gate miss proves a non-match, so the backtracking engine only ever runs on patterns that plausibly match — parity is preserved by construction and enforced by the fixture corpus.
 
-Indicatively (Ryzen 9950X): ~1 ms/parse across goroutines, from ~1–2 ms for early-exit UAs (bots, desktops) up to tens of ms for long-tail mobile UAs; warm heap ~50 MB. Reproduce and see methodology in [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+Indicatively (Ryzen 9950X): well under 1 ms for typical traffic, ~2.7 ms for the worst long-tail mobile UAs (was ~15 ms before the prefilter); the full 37k-fixture corpus replays 4.5× faster. Warm heap ~60 MB. Reproduce and see methodology in [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
 
-Because the engine backtracks, oversized crafted user agents can be expensive. Two guards are on by default (see [SECURITY.md](SECURITY.md)): a 2048-byte length cap (`WithMaxUARawLength`) and a 1 s per-match timeout (`WithMatchTimeout`), which together bound a ~24 KB junk input from ~60 s to ~1 s without affecting genuine traffic.
+Adversarial input is bounded by three layers (see [SECURITY.md](SECURITY.md)): the prefilter collapses worst-case junk from ~450 ms to ~60 ms per parse, while the 2048-byte length cap (`WithMaxUARawLength`) and the 1 s per-match timeout (`WithMatchTimeout`) remain as backstops.
 
 Recommendations for high-volume callers:
 
 - **Enable the result cache** — `WithResultCache(n)` adds a built-in sharded LRU keyed by UA + client hints; real traffic repeats UAs heavily, and a cache hit costs ~200 ns instead of ~1 ms+. Cached results are isolated copies, and only successful parses are stored. At 4k RPS the arithmetic is stark: uncached needs 4–60 CPU-cores just for parsing; a 95–99% hit rate reduces that to a fraction of one core.
 - **Bring your own eviction policy** — `WithResultCacheBackend(c)` accepts any `ResultCache` implementation. Under churn-heavy traffic (randomising bot UAs flooding the cache with one-hit wonders) a scan-resistant policy like SIEVE beats LRU at keeping hot entries alive; see the compiled adapter in [examples/sievecache](examples/sievecache/) (separate module — the dependency never enters this library's graph).
 - **For untrusted input**, tighten the guards (e.g. `WithMaxUARawLength(512)`, `WithMatchTimeout(100*time.Millisecond)`).
-- A performance pass (RE2 prefilter fast-path for the common alternations) is on the roadmap.
 
 ## Comparison
 
@@ -159,7 +158,7 @@ make sync-upstream   # pull regex DB + fixtures from upstream
 - [x] Client Hints support — `ParseWithHints`
 - [x] 1.0 — frozen API (`apidiff` hard gate), OpenSSF Scorecard, migration guide
 - [x] Opt-in result cache — `WithResultCache` (v1.1)
-- [ ] Performance pass — RE2 prefilter fast-path (v1.2)
+- [x] Performance pass — RE2/literal prefilter (v1.2): 5× on long-tail UAs, 8× on adversarial junk
 
 ## License
 

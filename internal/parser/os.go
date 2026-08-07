@@ -5,8 +5,6 @@ import (
 	"io/fs"
 	"strconv"
 	"strings"
-
-	"github.com/dlclark/regexp2"
 )
 
 // OSResult is the operating system detected from a user agent.
@@ -27,7 +25,7 @@ type osVersionRule struct {
 	Name    *string `yaml:"name"`
 	Version *string `yaml:"version"`
 
-	compiled *regexp2.Regexp
+	compiled *Compiled
 }
 
 // osRule is a top-level entry from oss.yml.
@@ -37,7 +35,7 @@ type osRule struct {
 	Version  string          `yaml:"version"`
 	Versions []osVersionRule `yaml:"versions"`
 
-	compiled *regexp2.Regexp
+	compiled *Compiled
 }
 
 // OS parses a user agent for operating system information, mirroring
@@ -46,6 +44,7 @@ type osRule struct {
 // safe for concurrent use.
 type OS struct {
 	rules      []osRule
+	gateSet    *GateSet
 	truncation int
 }
 
@@ -75,7 +74,12 @@ func NewOS(fsys fs.FS) (*OS, error) {
 		}
 	}
 
-	return &OS{rules: rules, truncation: VersionTruncationMinor}, nil
+	patterns := make([]string, len(rules))
+	for i := range rules {
+		patterns[i] = rules[i].Regex
+	}
+
+	return &OS{rules: rules, gateSet: CompileGateSet(patterns), truncation: VersionTruncationMinor}, nil
 }
 
 // SetVersionTruncation sets how deep version numbers are reported. It accepts
@@ -286,17 +290,41 @@ func (o *OS) parseFromUserAgent(ua string) (name, short, version string, err err
 	var matched *osRule
 	var matches []string
 
-	for i := range o.rules {
+	try := func(i int) (bool, error) {
 		m, mErr := matchWith(o.rules[i].compiled, ua)
-		if mErr != nil {
-			return "", "", "", mErr
+		if mErr != nil || m == nil {
+			return false, mErr
 		}
 
-		if m != nil {
-			matched = &o.rules[i]
-			matches = m
+		matched = &o.rules[i]
+		matches = m
 
-			break
+		return true, nil
+	}
+
+	// Required-literal probes over the lowercased UA: walk only the rules
+	// whose literal occurs (plus the few with no provable literal cover).
+	if only, ok := o.gateSet.SkipGated(ua); ok {
+		for _, i := range only {
+			hit, tErr := try(i)
+			if tErr != nil {
+				return "", "", "", tErr
+			}
+
+			if hit {
+				break
+			}
+		}
+	} else {
+		for i := range o.rules {
+			hit, tErr := try(i)
+			if tErr != nil {
+				return "", "", "", tErr
+			}
+
+			if hit {
+				break
+			}
 		}
 	}
 

@@ -177,6 +177,10 @@ type deviceRegex struct {
 type base struct {
 	name    string
 	regexes parser.OrderedMap[deviceRegex]
+	// gateSet narrows the per-brand walk via required-literal substring
+	// probes (the upstream device parsers have no preMatchOverall to lean
+	// on): only brands whose literal occurs in the UA are walked.
+	gateSet *parser.GateSet
 }
 
 func loadBase(fsys fs.FS, name, file string) (base, error) {
@@ -186,6 +190,13 @@ func loadBase(fsys fs.FS, name, file string) (base, error) {
 	if err := parser.Load(fsys, file, &b.regexes); err != nil {
 		return base{}, err
 	}
+
+	patterns := make([]string, len(b.regexes.Entries))
+	for i := range b.regexes.Entries {
+		patterns[i] = b.regexes.Entries[i].Value.Regex
+	}
+
+	b.gateSet = parser.CompileGateSet(patterns)
 
 	return b, nil
 }
@@ -272,20 +283,44 @@ func (b *base) parse(ua string, hints *parser.ClientHints) (*Result, error) {
 		matches      []string
 	)
 
-	for i := range b.regexes.Entries {
+	try := func(i int) (bool, error) {
 		e := &b.regexes.Entries[i]
 
 		m, err := parser.MatchUserAgent(ua, e.Value.Regex)
-		if err != nil {
-			return nil, err
+		if err != nil || m == nil {
+			return false, err
 		}
 
-		if m != nil {
-			matchedBrand = e.Key
-			regex = &e.Value
-			matches = m
+		matchedBrand = e.Key
+		regex = &e.Value
+		matches = m
 
-			break
+		return true, nil
+	}
+
+	// Required-literal probes over the lowercased UA: walk only the brands
+	// whose literal occurs (plus the few with no provable literal cover).
+	if only, ok := b.gateSet.SkipGated(ua); ok {
+		for _, i := range only {
+			hit, err := try(i)
+			if err != nil {
+				return nil, err
+			}
+
+			if hit {
+				break
+			}
+		}
+	} else {
+		for i := range b.regexes.Entries {
+			hit, err := try(i)
+			if err != nil {
+				return nil, err
+			}
+
+			if hit {
+				break
+			}
 		}
 	}
 

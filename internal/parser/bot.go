@@ -3,8 +3,6 @@ package parser
 import (
 	"fmt"
 	"io/fs"
-
-	"github.com/dlclark/regexp2"
 )
 
 // BotProducer identifies the organisation operating a bot.
@@ -29,14 +27,14 @@ type botEntry struct {
 	URL      string      `yaml:"url"`
 	Producer BotProducer `yaml:"producer"`
 
-	compiled *regexp2.Regexp
+	compiled *Compiled
 }
 
 // Bot parses a user agent for bot information, mirroring DeviceDetector's
 // Parser\Bot. It is immutable after construction and safe for concurrent use.
 type Bot struct {
 	entries []botEntry
-	overall *regexp2.Regexp
+	overall *Compiled
 }
 
 // NewBot loads bots.yml from fsys, precompiles every entry regex and builds the

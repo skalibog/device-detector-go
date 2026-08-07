@@ -11,6 +11,29 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 ## [Unreleased]
 
+### Added — RE2/literal prefilter (the v1.2 performance pass)
+
+- Every database pattern now carries a companion stdlib-`regexp` (RE2) gate
+  that is a strict **superset** of the regexp2 pattern's match semantics: a
+  gate miss proves a non-match and skips the backtracking engine; on a hit
+  regexp2 remains the single source of truth for results and captures, so
+  parity is preserved by construction (and enforced by the 37,640-entry
+  corpus, which passes unchanged). 99%+ of patterns are gated; lookaround,
+  backreferences and `\b` fall back to the full regexp2 path. Translation
+  widens `\d`/`\w`/`\s` to their .NET Unicode semantics (context-aware inside
+  character classes) and rewrites .NET named-group syntax.
+- The per-entry walks with no upstream `preMatchOverall` (device brands, OS
+  rules, browsers) are additionally narrowed by a **required-literal index**:
+  literals extracted from each regex AST such that a match implies one is
+  present in the UA; a lowercased substring probe then shrinks the walk to
+  plausible entries only. (A combined RE2 union was tried and rejected — Go's
+  NFA simulation over a ~20k-state union is slower than memchr-accelerated
+  probes.)
+- Numbers (Ryzen 9950X): worst long-tail mobile UA 14.8 ms → **2.7 ms**;
+  2 KB adversarial junk 450 ms → **~60 ms**; full corpus replay 67 s →
+  **15 s**. The fuzz input cap (512 B) and the relaxed aggregate-walk bounds
+  from the nightly-fuzz stabilisation are removed/tightened accordingly.
+
 ### Fixed
 
 - Nightly fuzzing stabilised after three failure classes were diagnosed:

@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"regexp"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -43,7 +44,18 @@ func SetMatchTimeout(d time.Duration) {
 // MatchTimeout returns the current per-match timeout (0 if disabled).
 func MatchTimeout() time.Duration { return time.Duration(matchTimeoutNanos.Load()) }
 
-var regexCache sync.Map // string -> *regexp2.Regexp
+// Compiled pairs the authoritative regexp2 pattern with its optional RE2
+// prefilter gate (nil when the pattern cannot be gated — see prefilter.go).
+type Compiled struct {
+	full *regexp2.Regexp
+	gate *regexp.Regexp
+}
+
+// Full exposes the underlying regexp2 for callers that manage matching
+// themselves (timeout stamping, direct FindStringMatch).
+func (c *Compiled) Full() *regexp2.Regexp { return c.full }
+
+var regexCache sync.Map // string -> *Compiled
 
 // normalizePattern rewrites PCRE escapes that the regexp2 (.NET) dialect
 // rejects: `\_` is a literal underscore in PCRE but a compile error in
@@ -86,9 +98,9 @@ func normalizePattern(p string) string {
 // empty model regexes as catch-alls (e.g. Roku's "Digital Video Player").
 // The empty-list guard for preMatchOverall lives in its callers, not here —
 // see PreMatchEmpty.
-func Compile(pattern string) (*regexp2.Regexp, error) {
+func Compile(pattern string) (*Compiled, error) {
 	if cached, ok := regexCache.Load(pattern); ok {
-		return cached.(*regexp2.Regexp), nil
+		return cached.(*Compiled), nil
 	}
 
 	re, err := regexp2.Compile(uaAnchor+`(?:`+normalizePattern(pattern)+`)`, regexp2.IgnoreCase)
@@ -98,9 +110,11 @@ func Compile(pattern string) (*regexp2.Regexp, error) {
 
 	StampTimeout(re)
 
-	regexCache.Store(pattern, re)
+	c := &Compiled{full: re, gate: compileGate(pattern)}
 
-	return re, nil
+	regexCache.Store(pattern, c)
+
+	return c, nil
 }
 
 // StampTimeout applies the current match timeout to re. Call before publishing
@@ -128,8 +142,16 @@ func MatchUserAgent(ua, pattern string) ([]string, error) {
 	return matchWith(re, ua)
 }
 
-func matchWith(re *regexp2.Regexp, ua string) ([]string, error) {
-	m, err := re.FindStringMatch(ua)
+func matchWith(c *Compiled, ua string) ([]string, error) {
+	// The RE2 gate is a strict superset of the regexp2 pattern's match
+	// semantics: a gate miss proves the full pattern cannot match, skipping
+	// the backtracking engine entirely. Linear in len(ua) regardless of
+	// pattern size.
+	if c.gate != nil && !c.gate.MatchString(ua) {
+		return nil, nil
+	}
+
+	m, err := c.full.FindStringMatch(ua)
 	if err != nil || m == nil {
 		return nil, err
 	}
