@@ -121,16 +121,21 @@ union costs more than per-pattern gates plus literal probes.
 - [x] README comparison table + `docs/MIGRATION.md` (from PHP matomo and from
   lightweight Go UA parsers; public-docs-only sourcing; clean-room).
 - Deferred (non-blocking): branch protection (conflicts with the solo
-  direct-push flow — a maintainer decision); Windows/macOS CI smoke; community
-  pack (Discussions, labels).
+  direct-push flow — a maintainer decision); community pack (Discussions —
+  worth enabling once there is inbound interest, empty forums age poorly).
+  Windows/macOS CI smoke ✅ landed 2026-08-07 (build + short suite per OS;
+  corpus stays on Linux).
 
 ---
 
 ## Explicitly deferred (post-1.0 or opt-in)
 
-- **`goccy/go-yaml` migration** (yaml.v3 is archived but functional, no CVE) —
-  not a 1.0 blocker; a standalone PR gated on the unchanged corpus. `OrderedMap`
-  and the `flexString` verbatim-scalar path are the high-risk spots.
+- **`goccy/go-yaml` migration** — DECIDED (2026-08-07): stays deferred until
+  yaml.v3 gets a CVE or an actual incompatibility. It only ever parses the
+  trusted embedded database, the archive status carries no active risk, and
+  the migration touches the two riskiest parsing spots (`OrderedMap` yaml.Node
+  handling, `flexString`) for zero functional gain. Revisit on a concrete
+  trigger, not for hygiene.
 - **In-library result LRU** (`WithResultCache`) — ✅ shipped in v1.1.0: sharded
   stdlib LRU, keyed by UA + client hints, isolated copies, opt-in; core stays
   pure/stateless by default.

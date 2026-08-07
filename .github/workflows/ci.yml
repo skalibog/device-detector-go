@@ -51,6 +51,25 @@ jobs:
         # and under the race detector it exceeds hosted-runner budgets.
         run: go test -race -short -count=1 -skip TestFixtures -timeout 20m ./...
 
+  os-smoke:
+    name: OS smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: "1.24"
+      - name: Build + short tests
+        # The library is pure Go (embedded database, no cgo/syscalls), so this
+        # is a portability tripwire, not a second test matrix: build everything
+        # and run the short suite; the corpus stays on Linux.
+        run: |
+          go build ./...
+          go test -short -count=1 -skip TestFixtures -timeout 15m ./...
+
   fuzz:
     name: Fuzz smoke
     runs-on: ubuntu-latest
