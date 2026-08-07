@@ -10,11 +10,9 @@ import (
 
 // TestAggregateWalkSeed replays the full-length worst-case input the nightly
 // fuzzer found (near-cap junk with an unclosed parenthesis: every pattern in
-// the database fails to match and backtracks). FuzzParse caps its inputs at
-// 512 bytes to stay under the go fuzzing engine's ~10 s worker watchdog, so
-// this test carries the full-length regression: the aggregate walk must stay
-// bounded (~450 ms on a fast machine) until the RE2 prefilter (v1.2) collapses
-// it, after which the limit here should tighten.
+// the database fails to match). With the RE2 prefilter this parses in ~60 ms
+// on fast hardware; the bound below is the regression tripwire for the
+// prefilter itself.
 func TestAggregateWalkSeed(t *testing.T) {
 	if raceEnabled {
 		t.Skip("race instrumentation slows backtracking 10-20x; wall-time bound is meaningless")
@@ -46,8 +44,8 @@ func TestAggregateWalkSeed(t *testing.T) {
 	info, perr := d.Parse(ua)
 	_ = perr // adversarial input: an error is acceptable, a hang is not
 
-	if elapsed := time.Since(start); elapsed > 15*time.Second {
-		t.Fatalf("aggregate walk took %v for %d-byte junk (bound 15s)", elapsed, len(ua))
+	if elapsed := time.Since(start); elapsed > 5*time.Second {
+		t.Fatalf("aggregate walk took %v for %d-byte junk (bound 5s)", elapsed, len(ua))
 	}
 
 	if info == nil {

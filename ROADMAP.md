@@ -101,13 +101,16 @@ Remaining (candidates for follow-up minor releases):
 - [ ] SHA-pin GitHub Actions; pin golangci-lint version.
 - [ ] Bi-weekly, tag-driven upstream-sync cron + static-table diff tooling.
 
-## v0.5.0 — RE2 prefilter (perf)
+## v0.5.0 — RE2 prefilter (perf) ✅ shipped as v1.2.0 (2026-08-05)
 
-Deferred here deliberately: the RE2 stdlib-regexp prefilter fast-path (with a
-`regexp2` fallback for the 165/19,771 lookaround patterns; 99.17% RE2-clean) is
-XL and touches the parity-sensitive capture-group extraction. It gets its own
-release and careful review rather than being rushed. It is the durable ReDoS
-fix and should take warm p99 parse well under 5 ms (from tens of ms).
+Landed as a two-layer prefilter with regexp2 kept as the single source of
+truth (superset gates → parity by construction; capture-group extraction never
+moved). Layer 1: per-pattern RE2 superset gates (99.16% of patterns). Layer 2:
+required-literal indexes narrowing the ungated walks (device brands, OS rules,
+browsers). Warm p99 goal met: worst long-tail UA 2.7 ms (was ~15 ms), 2 KB
+junk ~60 ms (was ~450 ms), corpus replay 4.5× faster. Lesson recorded: a
+combined RE2 union is NOT a prefilter win — Go's NFA simulation over a huge
+union costs more than per-pattern gates plus literal probes.
 
 ## v1.0.0 — Freeze ✅ (2026-07-30)
 

@@ -3,8 +3,6 @@ package parser
 import (
 	"fmt"
 	"io/fs"
-
-	"github.com/dlclark/regexp2"
 )
 
 // vendorRegex pairs a raw vendorfragments.yml pattern with its compiled form.
@@ -12,7 +10,7 @@ import (
 // DeviceDetector's getMatchedRegex() exposes.
 type vendorRegex struct {
 	raw      string
-	compiled *regexp2.Regexp
+	compiled *Compiled
 }
 
 // vendorEntry is a brand together with its ordered list of fragment regexes.

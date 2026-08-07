@@ -70,18 +70,6 @@ func FuzzParse(f *testing.F) {
 	}
 
 	f.Fuzz(func(t *testing.T, ua string) {
-		// Cap fuzzed inputs well below the 2048-byte parse cap. The aggregate
-		// pattern-walk costs ~0.2 ms/byte for worst-case junk on a fast machine,
-		// so near-cap inputs take 7-13 s on slow contended runners — and the go
-		// fuzzing engine kills a worker that spends ~10 s on one input ("fuzzing
-		// process hung"), before any assertion here could fire. Until the RE2
-		// prefilter (v1.2) collapses the walk cost, fuzz only exercises the
-		// length range that cannot trip the engine's watchdog; the full-length
-		// worst case stays covered by TestAggregateWalkSeed.
-		if len(ua) > 512 {
-			ua = ua[:512]
-		}
-
 		start := time.Now()
 
 		info, err := det.Parse(ua)
@@ -89,8 +77,10 @@ func FuzzParse(f *testing.F) {
 
 		// A single catastrophic pattern is already cut off by the 1 s match
 		// timeout (it surfaces as an error, accepted above); wall time here
-		// guards the aggregate walk, which at <=512 bytes stays comfortably
-		// inside 5 s even on slow shared runners.
+		// guards the aggregate walk, which the RE2 prefilter keeps under
+		// ~60 ms even for near-cap worst-case junk on fast hardware — safely
+		// inside 5 s (and the go fuzzing engine's ~10 s worker watchdog) on
+		// slow shared runners too.
 		limit := 5 * time.Second
 
 		// Under the race detector regexp2 backtracking runs 10-20x slower, so a
