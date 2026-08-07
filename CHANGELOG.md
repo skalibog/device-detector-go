@@ -11,6 +11,8 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-05
+
 ### Added — RE2/literal prefilter (the v1.2 performance pass)
 
 - Every database pattern now carries a companion stdlib-`regexp` (RE2) gate
