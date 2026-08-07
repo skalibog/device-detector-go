@@ -302,8 +302,8 @@ func (o *OS) parseFromUserAgent(ua string) (name, short, version string, err err
 		return true, nil
 	}
 
-	// One linear RE2 pass over the union of all translatable rules: on a
-	// miss only the untranslatable few need walking.
+	// Required-literal probes over the lowercased UA: walk only the rules
+	// whose literal occurs (plus the few with no provable literal cover).
 	if only, ok := o.gateSet.SkipGated(ua); ok {
 		for _, i := range only {
 			hit, tErr := try(i)

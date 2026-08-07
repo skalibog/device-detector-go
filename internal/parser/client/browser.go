@@ -376,8 +376,8 @@ func (b *Browser) parseFromUserAgent(ua string) (uaBrowser, error) {
 		return true, nil
 	}
 
-	// One linear RE2 pass over the union of all translatable browser regexes:
-	// on a miss only the untranslatable few need walking.
+	// Required-literal probes over the lowercased UA: walk only the entries
+	// whose literal occurs (plus the few with no provable literal cover).
 	if only, ok := b.gateSet.SkipGated(ua); ok {
 		for _, i := range only {
 			hit, err := try(i)

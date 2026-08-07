@@ -177,9 +177,9 @@ type deviceRegex struct {
 type base struct {
 	name    string
 	regexes parser.OrderedMap[deviceRegex]
-	// gateSet answers "could any brand regex match?" in one linear RE2 pass,
-	// replacing a full per-brand walk on inputs that match nothing (the
-	// upstream device parsers have no preMatchOverall to lean on).
+	// gateSet narrows the per-brand walk via required-literal substring
+	// probes (the upstream device parsers have no preMatchOverall to lean
+	// on): only brands whose literal occurs in the UA are walked.
 	gateSet *parser.GateSet
 }
 
@@ -298,8 +298,8 @@ func (b *base) parse(ua string, hints *parser.ClientHints) (*Result, error) {
 		return true, nil
 	}
 
-	// One linear RE2 pass over the union of all translatable brand regexes:
-	// on a miss only the untranslatable few need walking.
+	// Required-literal probes over the lowercased UA: walk only the brands
+	// whose literal occurs (plus the few with no provable literal cover).
 	if only, ok := b.gateSet.SkipGated(ua); ok {
 		for _, i := range only {
 			hit, err := try(i)
