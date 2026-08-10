@@ -4,7 +4,6 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/skalibog/device-detector-go.svg)](https://pkg.go.dev/github.com/skalibog/device-detector-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/skalibog/device-detector-go)](https://goreportcard.com/report/github.com/skalibog/device-detector-go)
 [![Upstream fixtures](https://img.shields.io/badge/upstream_fixtures-37%2C640_%2F_100%25-brightgreen)](#validation)
-[![codecov](https://codecov.io/gh/skalibog/device-detector-go/graph/badge.svg)](https://codecov.io/gh/skalibog/device-detector-go)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/skalibog/device-detector-go/badge)](https://scorecard.dev/viewer/?uri=github.com/skalibog/device-detector-go)
 [![Go version](https://img.shields.io/github/go-mod/go-version/skalibog/device-detector-go)](go.mod)
 [![License: LGPL-3.0-or-later](https://img.shields.io/badge/license-LGPL--3.0--or--later-blue)](LICENSE)
