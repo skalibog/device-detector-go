@@ -1,8 +1,9 @@
-name: Fuzz (nightly)
+name: Fuzz (on demand)
 
 on:
-  schedule:
-    - cron: "41 3 * * *" # nightly
+  # Maintenance mode: the nightly cron is retired — with no new code landing,
+  # continuous fuzzing only produces noise. The 60 s PR smoke in ci.yml still
+  # guards database syncs; run this manually for a deep session.
   workflow_dispatch:
     inputs:
       fuzztime:

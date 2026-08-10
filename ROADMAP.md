@@ -95,11 +95,15 @@ Done:
 - [x] `docs/FAQ.md` — leads with the LGPL / Go static-linking answer.
 - [x] `docs/BENCHMARKS.md` — reproducible methodology + current numbers.
 
-Remaining (candidates for follow-up minor releases):
+Remaining — resolved since:
 
-- [ ] Real coverage (Codecov tokenless/OIDC) replacing the static 83% badge.
-- [ ] SHA-pin GitHub Actions; pin golangci-lint version.
-- [ ] Bi-weekly, tag-driven upstream-sync cron + static-table diff tooling.
+- [x] SHA-pin GitHub Actions; pin golangci-lint version (v0.4.1).
+- [x] Bi-weekly, tag-driven upstream-sync cron (v0.4.1); static-table diff
+  tooling stays folded into the sync-PR review flow.
+- Codecov was wired in v0.4.1 (tokenless/OIDC) but the repo was never
+  activated on codecov.io, so the integration was removed again when the
+  project entered maintenance — coverage prints in the fixtures CI job and
+  uploads as an artifact.
 
 ## v0.5.0 — RE2 prefilter (perf) ✅ shipped as v1.2.0 (2026-08-05)
 
@@ -127,6 +131,16 @@ union costs more than per-pattern gates plus literal probes.
   corpus stays on Linux).
 
 ---
+
+## Maintenance mode (since v1.2.0, 2026-08-07)
+
+v1.2.0 is the final feature release. What stays alive ("living
+preservation"): the fortnightly tag-driven upstream sync (database refreshes
+gated on the corpus — mergeable as patch releases), weekly govulncheck and
+Scorecard, and dependabot. The nightly fuzz cron is retired (the 60 s PR
+smoke still guards syncs; deep fuzzing available via workflow_dispatch).
+Codecov was removed — never activated. New feature work would reopen the
+roadmap below.
 
 ## Explicitly deferred (post-1.0 or opt-in)
 
