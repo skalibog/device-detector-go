@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read # least privilege; the fixtures job opts into id-token: write
+  contents: read # least privilege for every job
 
 jobs:
   lint:
