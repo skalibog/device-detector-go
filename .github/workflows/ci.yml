@@ -114,6 +114,9 @@ jobs:
   fixtures:
     name: Upstream fixture corpus
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # tokenless Codecov upload via OIDC
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
@@ -129,3 +132,9 @@ jobs:
         with:
           name: coverage
           path: coverage.out
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          use_oidc: true
+          files: coverage.out
+          fail_ci_if_error: false
