@@ -54,13 +54,14 @@ func TestAggregateWalkSeed(t *testing.T) {
 }
 
 // TestNonASCIISlowCases replays the nightly-fuzz findings from issues #26/#27:
-// invalid-UTF-8 filler behind a real anchor word ("Android"). The anchor
-// admits patterns through the literal probes, and regexp2 then backtracks
-// over every replacement-rune position — with IgnoreCase paying a full
-// unicode.ToLower per rune, which never hits the ASCII fast path. The
-// prefilter took these from 6-7 s (slow runner) to under 100 ms on dev
-// hardware; kept as committed unit regressions rather than fuzz seeds so
-// mutations around them cannot flake the PR fuzz smoke.
+// invalid-UTF-8 filler behind text that pattern literals anchor on (an
+// "Android" fragment in one case, digit runs in the other). The anchor admits
+// patterns through the literal probes, and regexp2 then backtracks over every
+// replacement-rune position — with IgnoreCase paying a full unicode.ToLower
+// per rune, which never hits the ASCII fast path. The prefilter took these
+// from 6-7 s (slow runner) to under 100 ms on dev hardware; kept as committed
+// unit regressions rather than fuzz seeds so mutations around them cannot
+// flake the PR fuzz smoke.
 func TestNonASCIISlowCases(t *testing.T) {
 	if raceEnabled {
 		t.Skip("race instrumentation slows backtracking 10-20x; wall-time bound is meaningless")
