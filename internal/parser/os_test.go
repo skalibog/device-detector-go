@@ -220,6 +220,50 @@ func TestIsDesktopOS(t *testing.T) {
 	}
 }
 
+func TestOSApplyClientHintMapping(t *testing.T) {
+	cases := map[string]string{
+		"Linux":           "GNU/Linux",
+		"macOS":           "Mac",
+		"Mac OS X":        "Mac",
+		"MacIntel":        "Mac",
+		"Cloud Phone 2.4": "Puffin OS",
+		"Win32":           "Windows",
+		"Android":         "Android",
+	}
+
+	for in, want := range cases {
+		if got := osApplyClientHintMapping(in); got != want {
+			t.Errorf("osApplyClientHintMapping(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestOSVersionMappings652(t *testing.T) {
+	for in, want := range map[string]string{"15": "16", "16": "16", "14": "14"} {
+		if got := fireOSVersion(in); got != want {
+			t.Errorf("fireOSVersion(%q) = %q, want %q", in, got, want)
+		}
+	}
+
+	if got := lineageOSVersion("17"); got != "24" {
+		t.Errorf("lineageOSVersion(17) = %q, want 24", got)
+	}
+}
+
+func TestOSClientHintsPuffinVersionFromUA(t *testing.T) {
+	p := newTestOS(t)
+
+	got, err := p.Parse("Mozilla/5.0 (Cloud Phone 2.4.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
+		&ClientHints{Platform: "Cloud Phone 2.4", PlatformVersion: "9.9"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got == nil || got.Name != "Puffin OS" || got.Version != "2.4.1" {
+		t.Errorf("puffin CH = %+v, want Puffin OS/2.4.1 (version from UA)", got)
+	}
+}
+
 func TestOSClientHints(t *testing.T) {
 	p := newTestOS(t)
 

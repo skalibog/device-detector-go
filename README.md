@@ -16,9 +16,9 @@ This is an **unofficial, AI-assisted port** translated directly from the PHP sou
 ## Highlights
 
 - **Zero-config** — the regex database ships inside the binary via `go:embed`; `devicedetector.New()` just works. Loading from an external directory is also supported for out-of-band database updates.
-- **Byte-faithful to upstream** — all 37,640 fixture entries (with client hints) from matomo/device-detector reproduce identically, enforced in CI with a zero-mismatch gate.
+- **Byte-faithful to upstream** — all 38,301 fixture entries (with client hints) from matomo/device-detector reproduce identically, enforced in CI with a zero-mismatch gate.
 - **Thread-safe by design** — one `DeviceDetector` instance is shared across goroutines; parsers are immutable after construction. Verified with the race detector and a concurrent-determinism test.
-- **Complete detection surface** — 803 bots, 716 browsers (with engine and engine version), 203 operating systems, 2,106 device brands across 14 device types.
+- **Complete detection surface** — 843 bots, 728 browsers (with engine and engine version), 213 operating systems, 2,176 device brands across 14 device types.
 
 ## Install
 
@@ -95,7 +95,7 @@ info, err := detector.ParseWithHints(request.UserAgent(), hints)
 
 ## Validation
 
-The test suite replays the upstream fixture corpus — **37,640 user agents (user-agent and client-hints), 100.00% identical output** — and fails on a single mismatch. Statement coverage across all packages is ~83%, dominated by the corpus replay.
+The test suite replays the upstream fixture corpus — **38,301 user agents (user-agent and client-hints), 100.00% identical output** — and fails on a single mismatch. Statement coverage across all packages is ~83%, dominated by the corpus replay.
 
 ## Performance
 
@@ -136,7 +136,7 @@ Migrating from any of these (or from the PHP original) is covered in
 
 ## Data provenance and updates
 
-The regex database (`data/regexes/`) and test fixtures (`testdata/fixtures/`) are taken verbatim from [matomo/device-detector](https://github.com/matomo-org/device-detector) release [**6.5.1**](https://github.com/matomo-org/device-detector/releases/tag/6.5.1). See [data/NOTICE.md](data/NOTICE.md).
+The regex database (`data/regexes/`) and test fixtures (`testdata/fixtures/`) are taken verbatim from [matomo/device-detector](https://github.com/matomo-org/device-detector) release [**6.5.2**](https://github.com/matomo-org/device-detector/releases/tag/6.5.2). See [data/NOTICE.md](data/NOTICE.md).
 
 A scheduled workflow re-syncs the database from the latest upstream release tag fortnightly and opens a PR; the fixture gate then proves the Go code still reproduces upstream output on the new corpus. Manual sync: `make sync-upstream` or `scripts/sync-upstream.sh <ref>`.
 

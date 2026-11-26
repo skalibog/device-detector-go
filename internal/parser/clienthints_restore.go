@@ -9,9 +9,10 @@ var (
 	// uaCHFragmentRe matches a frozen "Android 10; K"-style user agent that
 	// client hints can restore. These patterns use no lookaround, so the
 	// linear-time engine is fine (they run on the raw UA, like PHP preg_match).
-	uaCHFragmentRe   = regexp.MustCompile(`(?i)Android (?:1[0-6][.\d]*; K(?: Build/|[;)])|1[0-6]\)) AppleWebKit`)
-	androidRestoreRe = regexp.MustCompile(`Android (?:10[.\d]*; K|1[1-5])`)
-	desktopRestoreRe = regexp.MustCompile(`X11; Linux x86_64`)
+	uaCHFragmentRe   = regexp.MustCompile(`(?i)Android (?:1[0-7][.\d]*; (?:K(?: Build/|[;)])|[A-Za-z0-9]{10}; U;.+)|1[0-7]\)) AppleWebKit`)
+	androidRestoreRe = regexp.MustCompile(`Android (?:10[.\d]*; K|1[1-7])`)
+	linuxRestoreRe   = regexp.MustCompile(`X11; Linux x86_64`)
+	windowsRestoreRe = regexp.MustCompile(`Windows NT 10\.0; Win64; x64`)
 )
 
 // HasUserAgentClientHintsFragment reports whether ua carries a frozen
@@ -25,6 +26,9 @@ func HasUserAgentClientHintsFragment(ua string) bool {
 
 	return !strings.Contains(strings.ToLower(ua), "telegram-android/")
 }
+
+// PHPAtoi exposes phpAtoi to the sibling parser packages.
+func PHPAtoi(s string) int { return phpAtoi(s) }
 
 // phpAtoi mirrors PHP's (int) cast of a string: an optional sign then the
 // leading run of digits, yielding 0 when there is no leading number.
@@ -91,7 +95,9 @@ func (c *ClientHints) RestoreUserAgent(ua string) string {
 	}
 
 	if HasDesktopFragment(ua) {
-		ua = desktopRestoreRe.ReplaceAllString(ua, "X11; Linux x86_64; "+c.Model)
+		// PHP preg_replace with pattern/replacement arrays applies them in order.
+		ua = linuxRestoreRe.ReplaceAllString(ua, "X11; Linux x86_64; "+c.Model)
+		ua = windowsRestoreRe.ReplaceAllString(ua, "Windows NT 10.0; Win64; x64; "+c.Model)
 	}
 
 	return ua

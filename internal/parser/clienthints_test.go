@@ -136,6 +136,39 @@ func TestRestoreUserAgent(t *testing.T) {
 	}
 }
 
+func TestRestoreUserAgent652(t *testing.T) {
+	cases := []struct {
+		name string
+		ch   *ClientHints
+		ua   string
+		want string
+	}{
+		{
+			name: "Android 17 frozen UA",
+			ch:   &ClientHints{Model: "Pixel 10", PlatformVersion: "17.0.0"},
+			ua:   "Mozilla/5.0 (Linux; Android 17) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36",
+			want: "Mozilla/5.0 (Linux; Android 17.0.0; Pixel 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36",
+		},
+		{
+			name: "Windows NT 10 desktop UA",
+			ch:   &ClientHints{Model: "Galaxy 4"},
+			ua:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36 Edg/103.0.1264.44",
+			want: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; Galaxy 4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36 Edg/103.0.1264.44",
+		},
+	}
+
+	for _, c := range cases {
+		if got := c.ch.RestoreUserAgent(c.ua); got != c.want {
+			t.Errorf("%s:\n got %q\nwant %q", c.name, got, c.want)
+		}
+	}
+
+	// 10-char build token + "; U;" is a client-hints fragment since 6.5.2.
+	if !HasUserAgentClientHintsFragment("Mozilla/5.0 (Linux; Android 15; AbCdE12345; U; en-us) AppleWebKit/537.36") {
+		t.Error("Android 1x; <10 chars>; U; must count as a client-hints fragment")
+	}
+}
+
 func TestClientHintsHTMLTagDiscarded(t *testing.T) {
 	ch := NewClientHintsFromMap(map[string]any{
 		"sec-ch-ua-platform": `Windows<script>alert(1)</script>`,

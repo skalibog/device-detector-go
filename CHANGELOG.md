@@ -11,6 +11,32 @@ Each release also notes the pinned matomo/device-detector database commit it shi
 
 ## [Unreleased]
 
+### Changed
+
+- Database resynced to matomo/device-detector release **6.5.2** (was 6.5.1).
+  New detections include Android Go, HyperOS, Vega OS, SteamOS, ThinOS, KoboOS,
+  FortiOS, MyOS, YaOS and YodaOS-Master; Mullvad, Island, iTop Private,
+  360 Speed, Lightpanda and other browsers; ~40 more bots (incl. AI agents);
+  dozens of TV and phone brands. The hand-mirrored Go tables were regenerated:
+  `deviceBrands` (2,176), `availableBrowsers` (728), `mobileOnlyBrowsers` (233),
+  `operatingSystems` (213), `osFamilies`, `browserFamilies`. The full fixture
+  corpus is at 100% (38,301 entries).
+
+### Ported upstream logic (6.5.1 → 6.5.2)
+
+- Client hints: the browser engine (Blink) and its version now come from the
+  `Chromium` / `Android WebView` brand, a newer Blink build in the UA wins; a
+  `Chrome` brand no longer ends the brand search, and the Chromium-reported
+  version is kept only when it refines the UA version of the same major.
+- Client hints UA restore: Android up to 17, the `<10 chars>; U;` frozen form,
+  and `Windows NT 10.0; Win64; x64` desktop UAs now get the reported model.
+- OS: client-hint platforms `Mac OS X` / `MacIntel` → Mac, `Win32` → Windows,
+  `Cloud Phone 2.4` → Puffin OS (version taken from the UA); Fire OS 15/16 and
+  Lineage OS 24 version mappings.
+- Device: `PC;` counts as a desktop fragment, `Steam` excludes the desktop
+  fragment, VIDAA devices and the Odin client are TVs, ThinOS devices are Dell,
+  wearables are no longer re-typed as TVs by the `Andr0id|… TV` heuristic.
+
 ## [1.2.0] - 2026-08-05
 
 ### Added — RE2/literal prefilter (the v1.2 performance pass)

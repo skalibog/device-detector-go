@@ -175,6 +175,7 @@ func TestHasDesktopFragment(t *testing.T) {
 		{"Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/121.0", true},
 		{"Mozilla/5.0 (Windows NT 10.0) Trident/7.0; Touch", false},     // Trident excluded
 		{"Mozilla/5.0 (Linux; Android 13; Pixel) Mobile Safari", false}, // no desktop fragment
+		{"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36 Steam", false}, // Steam excluded (6.5.2)
 	}
 
 	for _, c := range cases {

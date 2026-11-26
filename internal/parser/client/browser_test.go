@@ -14,6 +14,12 @@ func TestBrowserParse(t *testing.T) {
 	b.SetVersionTruncation(parser.VersionTruncationNone)
 
 	for _, fx := range loadClientFixtures(t, "desktop-1.yml") {
+		// The device corpus also carries non-browser clients (e.g. Citrix
+		// Workspace, a mobile app since upstream 6.5.2); only browsers apply here.
+		if fx.Client.Type != "browser" {
+			continue
+		}
+
 		t.Run(fx.UserAgent, func(t *testing.T) {
 			got, err := b.Parse(fx.UserAgent, nil)
 			if err != nil {
@@ -133,6 +139,33 @@ func TestBrowserClientHints(t *testing.T) {
 	}
 	if got == nil || got.Name != "Chrome Mobile" {
 		t.Errorf("browser CH = %+v, want name Chrome Mobile", got)
+	}
+
+	// 6.5.2: a Chrome brand no longer ends the search — a later specific
+	// brand wins.
+	desk := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36"
+	got, err = b.Parse(desk, &parser.ClientHints{FullVersionList: []parser.BrandVersion{
+		{Brand: "Google Chrome", Version: "120.0.6099.71"},
+		{Brand: "Opera", Version: "106.0.4998.19"},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got == nil || got.Name != "Opera" {
+		t.Errorf("chrome-then-opera CH = %+v, want Opera", got)
+	}
+
+	// 6.5.2: the engine version comes from the Chromium brand, but a newer
+	// Blink build in the UA wins.
+	got, err = b.Parse(desk, &parser.ClientHints{FullVersionList: []parser.BrandVersion{
+		{Brand: "Chromium", Version: "120.0.6099.71"},
+		{Brand: "Opera", Version: "106.0.4998.19"},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got == nil || got.Engine != "Blink" || got.EngineVersion != "121.0.6167.85" {
+		t.Errorf("newer UA Blink = %+v, want Blink 121.0.6167.85", got)
 	}
 
 	// nil hints behaves like the UA-only path.

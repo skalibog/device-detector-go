@@ -8,7 +8,7 @@
 # Usage: scripts/sync-upstream.sh [ref]
 set -euo pipefail
 
-REF="${1:-f30457500c6be4c80c8830466f8a746724779fd0}" # matomo/device-detector 6.5.1
+REF="${1:-e83ce7a97f05d8ee3e1eee7ea77a73b3bdfebd9a}" # matomo/device-detector 6.5.2
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 UP="$ROOT/upstream"
 

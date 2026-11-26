@@ -431,6 +431,11 @@ func (d *DeviceDetector) parseDevice(info *Info, hints *ClientHints) error {
 		info.brand = "Apple"
 	}
 
+	// Assume all devices running ThinOS are from Dell.
+	if info.brand == "" && osName == "ThinOS" {
+		info.brand = "Dell"
+	}
+
 	// All devices containing a VR fragment are assumed to be wearables.
 	if info.deviceType == DeviceTypeUnknown && matchUA(ua, `Android( [.0-9]+)?; Mobile VR;| VR `) {
 		info.deviceType = DeviceTypeWearable
@@ -516,8 +521,14 @@ func (d *DeviceDetector) parseDevice(info *Info, hints *ClientHints) error {
 		info.brand = "coocaa"
 	}
 
+	// All devices running VIDAA are assumed to be TVs.
+	if osName == "VIDAA" {
+		info.deviceType = DeviceTypeTV
+	}
+
 	// 'Andr0id', 'Android TV', 'BRAVIA', trailing ' TV' etc. mean TV.
-	if info.deviceType != DeviceTypeTV && info.deviceType != DeviceTypePeripheral &&
+	if info.deviceType != DeviceTypeTV && info.deviceType != DeviceTypeWearable &&
+		info.deviceType != DeviceTypePeripheral &&
 		matchUA(ua, `Andr0id|(?:Android(?: UHD)?|Google) TV|\(lite\) TV|BRAVIA|Firebolt| TV$`) {
 		info.deviceType = DeviceTypeTV
 	}
@@ -531,7 +542,7 @@ func (d *DeviceDetector) parseDevice(info *Info, hints *ClientHints) error {
 	tvClients := []string{
 		"Kylo", "Espial TV Browser", "LUJO TV Browser", "LogicUI TV Browser", "Open TV Browser", "Seraphic Sraf",
 		"Opera Devices", "Crow Browser", "Vewd Browser", "TiviMate", "Quick Search TV", "QJY TV Browser", "TV Bro",
-		"Redline",
+		"Redline", "Odin",
 	}
 	if contains(tvClients, clientName) {
 		info.deviceType = DeviceTypeTV
@@ -542,9 +553,8 @@ func (d *DeviceDetector) parseDevice(info *Info, hints *ClientHints) error {
 		info.deviceType = DeviceTypeTV
 	}
 
-	// Explicit 'Desktop x64;'-style fragment forces desktop.
-	if info.deviceType != DeviceTypeDesktop && strings.Contains(ua, "Desktop") &&
-		matchUA(ua, `Desktop(?: (x(?:32|64)|WOW64))?;`) {
+	// Explicit 'Desktop x64;' / 'PC;'-style fragment forces desktop.
+	if info.deviceType != DeviceTypeDesktop && matchUA(ua, `(?:Desktop|PC)(?: (x(?:32|64)|WOW64))?;`) {
 		info.deviceType = DeviceTypeDesktop
 	}
 

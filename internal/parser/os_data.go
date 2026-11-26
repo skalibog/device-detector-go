@@ -31,6 +31,7 @@ var osNameByShort = func() map[string]string {
 var operatingSystemList = []osNamePair{
 	{"AIX", "AIX"},
 	{"AND", "Android"},
+	{"AGO", "Android Go"},
 	{"ADR", "Android TV"},
 	{"ALP", "Alpine Linux"},
 	{"AMZ", "Amazon Linux"},
@@ -77,6 +78,7 @@ var operatingSystemList = []osNamePair{
 	{"FOS", "Firefox OS"},
 	{"FIR", "Fire OS"},
 	{"FOR", "Foresight Linux"},
+	{"FRT", "FortiOS"},
 	{"FRE", "Freebox"},
 	{"BSD", "FreeBSD"},
 	{"FRI", "FRITZ!OS"},
@@ -96,6 +98,7 @@ var operatingSystemList = []osNamePair{
 	{"HNX", "HarmonyOS NEXT"},
 	{"HAS", "HasCodingOS"},
 	{"HEL", "HELIX OS"},
+	{"HYP", "HyperOS"},
 	{"IRI", "IRIX"},
 	{"INF", "Inferno"},
 	{"JME", "Java ME"},
@@ -104,6 +107,7 @@ var operatingSystemList = []osNamePair{
 	{"KAL", "Kali"},
 	{"KAN", "Kanotix"},
 	{"KIN", "KIN OS"},
+	{"KOB", "KoboOS"},
 	{"KOL", "KolibriOS"},
 	{"KNO", "Knoppix"},
 	{"KTV", "KreaTV"},
@@ -134,6 +138,7 @@ var operatingSystemList = []osNamePair{
 	{"MIN", "Mint"},
 	{"MLD", "MildWild"},
 	{"MOR", "MorphOS"},
+	{"MYO", "MyOS"},
 	{"NBS", "NetBSD"},
 	{"MTK", "MTK / Nucleus"},
 	{"MRE", "MRE"},
@@ -194,6 +199,7 @@ var operatingSystemList = []osNamePair{
 	{"SMA", "Smartisan OS"},
 	{"SOS", "Solaris"},
 	{"SBL", "Star-Blade OS"},
+	{"STM", "SteamOS"},
 	{"SYL", "Syllable"},
 	{"SYM", "Symbian"},
 	{"SYS", "Symbian OS"},
@@ -201,6 +207,7 @@ var operatingSystemList = []osNamePair{
 	{"S60", "Symbian OS Series 60"},
 	{"SY3", "Symbian^3"},
 	{"TEN", "TencentOS"},
+	{"THN", "ThinOS"},
 	{"TDX", "ThreadX"},
 	{"TIT", "Titan OS"},
 	{"TIZ", "Tizen"},
@@ -210,6 +217,7 @@ var operatingSystemList = []osNamePair{
 	{"UBT", "Ubuntu"},
 	{"ULT", "ULTRIX"},
 	{"UOS", "UOS"},
+	{"VEG", "Vega OS"},
 	{"VID", "VIDAA"},
 	{"VIZ", "ViziOS"},
 	{"WAS", "watchOS"},
@@ -225,6 +233,8 @@ var operatingSystemList = []osNamePair{
 	{"WPO", "WoPhone"},
 	{"XBX", "Xbox"},
 	{"XBT", "Xubuntu"},
+	{"YAS", "YaOS"},
+	{"YOD", "YodaOS-Master"},
 	{"YNS", "YunOS"},
 	{"ZEN", "Zenwalk"},
 	{"ZOR", "ZorinOS"},
@@ -235,7 +245,7 @@ var operatingSystemList = []osNamePair{
 }
 
 var osFamilyList = []osFamilyGroup{
-	{"Android", []string{"AND", "CYN", "FIR", "REM", "RZD", "MLD", "MCD", "YNS", "GRI", "HAR", "ADR", "CLR", "BOS", "REV", "LEN", "SIR", "RRS", "WER", "PIC", "ARM", "HEL", "BYI", "RIS", "PUF", "LEA", "MET", "SMA"}},
+	{"Android", []string{"AND", "CYN", "FIR", "REM", "RZD", "MLD", "MCD", "YNS", "GRI", "HAR", "ADR", "CLR", "BOS", "REV", "LEN", "SIR", "RRS", "WER", "PIC", "ARM", "HEL", "BYI", "RIS", "PUF", "LEA", "MET", "SMA", "AGO", "HYP", "MYO", "YOD", "YAS"}},
 	{"AmigaOS", []string{"AMG", "MOR", "ARO"}},
 	{"BlackBerry", []string{"BLB", "QNX"}},
 	{"Brew", []string{"BMP"}},
@@ -247,19 +257,19 @@ var osFamilyList = []osFamilyGroup{
 	{"IBM", []string{"OS2", "ARC"}},
 	{"iOS", []string{"IOS", "ATV", "WAS", "IPA"}},
 	{"RISC OS", []string{"ROS"}},
-	{"GNU/Linux", []string{"LIN", "ARL", "DEB", "KNO", "MIN", "UBT", "KBT", "XBT", "LBT", "FED", "RHT", "VLN", "MDR", "GNT", "SAB", "SLW", "SSE", "CES", "BTR", "SAF", "ORD", "TOS", "RSO", "DEE", "FRE", "MAG", "FEN", "CAI", "PCL", "HAS", "LOS", "DVK", "ROK", "OWR", "OTV", "KTV", "PUR", "PLA", "FUC", "PAR", "FOR", "MON", "KAN", "ZEN", "LND", "LNS", "CHN", "AMZ", "TEN", "CST", "NOV", "ROU", "ZOR", "RED", "KAL", "ORA", "VID", "TIV", "BSN", "RAS", "UOS", "PIO", "FRI", "LIR", "WEB", "SER", "ASP", "AOS", "LOO", "EUL", "SCI", "ALP", "CLO", "ROC", "OVZ", "PVE", "RST", "EZX", "GNS", "JOL", "TUR", "QTP", "WPO", "PAN", "VIZ", "AZU", "COL", "OSS", "ELM", "LPU"}},
+	{"GNU/Linux", []string{"LIN", "ARL", "DEB", "KNO", "MIN", "UBT", "KBT", "XBT", "LBT", "FED", "RHT", "VLN", "MDR", "GNT", "SAB", "SLW", "SSE", "CES", "BTR", "SAF", "ORD", "TOS", "RSO", "DEE", "FRE", "MAG", "FEN", "CAI", "PCL", "HAS", "LOS", "DVK", "ROK", "OWR", "OTV", "KTV", "PUR", "PLA", "FUC", "PAR", "FOR", "MON", "KAN", "ZEN", "LND", "LNS", "CHN", "AMZ", "TEN", "CST", "NOV", "ROU", "ZOR", "RED", "KAL", "ORA", "VID", "TIV", "BSN", "RAS", "UOS", "PIO", "FRI", "LIR", "WEB", "SER", "ASP", "AOS", "LOO", "EUL", "SCI", "ALP", "CLO", "ROC", "OVZ", "PVE", "RST", "EZX", "GNS", "JOL", "TUR", "QTP", "WPO", "PAN", "VIZ", "AZU", "COL", "OSS", "ELM", "LPU", "KOB", "FRT"}},
 	{"Mac", []string{"MAC"}},
-	{"Mobile Gaming Console", []string{"PSP", "NDS", "XBX"}},
+	{"Mobile Gaming Console", []string{"PSP", "NDS", "XBX", "STM"}},
 	{"OpenHarmony", []string{"OHS", "HNX"}},
 	{"OpenVMS", []string{"OVS"}},
 	{"Real-time OS", []string{"MTK", "TDX", "MRE", "JME", "REX", "RXT", "KOL", "MOS", "NTX"}},
 	{"Other Mobile", []string{"WOS", "POS", "SBA", "TIZ", "SMG", "MAE", "LUN", "GEO", "CON"}},
 	{"Symbian", []string{"SYM", "SYS", "SY3", "S60", "S40"}},
-	{"Unix", []string{"SOS", "AIX", "HPX", "BSD", "NBS", "OBS", "DFB", "SYL", "IRI", "T64", "INF", "ELE", "GNX", "ULT", "NWS", "NXT", "SBL", "BS1", "GHO", "PLN", "MNX"}},
+	{"Unix", []string{"SOS", "AIX", "HPX", "BSD", "NBS", "OBS", "DFB", "SYL", "IRI", "T64", "INF", "ELE", "GNX", "ULT", "NWS", "NXT", "SBL", "BS1", "GHO", "PLN", "MNX", "THN"}},
 	{"WebTV", []string{"WTV"}},
 	{"Windows", []string{"WIN"}},
 	{"Windows Mobile", []string{"WPH", "WMO", "WCE", "WRT", "WIO", "KIN"}},
-	{"Other Smart TV", []string{"WHS", "TIT", "ORS"}},
+	{"Other Smart TV", []string{"WHS", "TIT", "ORS", "VEG"}},
 }
 
 // desktopOsArray holds the OS families known to be desktop-only.
@@ -277,6 +287,8 @@ var desktopOsArray = map[string]struct{}{
 // fireOsVersionMapping and lineageOsVersionMapping remap an Android version to
 // the Fire OS / Lineage OS version, consulted from the client-hints app remaps.
 var fireOsVersionMapping = map[string]string{
+	"16":    "16",
+	"15":    "16",
 	"14":    "14",
 	"13":    "14",
 	"12":    "14",
@@ -295,6 +307,7 @@ var fireOsVersionMapping = map[string]string{
 }
 
 var lineageOsVersionMapping = map[string]string{
+	"17":    "24",
 	"16":    "23",
 	"15":    "22",
 	"14":    "21",

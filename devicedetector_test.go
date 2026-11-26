@@ -141,6 +141,16 @@ func TestDeviceHeuristics(t *testing.T) {
 			"Mozilla/5.0 (Linux; U) AppleWebKit/538.1 (KHTML, like Gecko) Opera TV Store Safari/538.1",
 			DeviceTypeTV,
 		},
+		{
+			"VIDAA OS -> tv (6.5.2)",
+			"Mozilla/5.0 (X11; Linux; VIDAA/7.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.0 Safari/537.36",
+			DeviceTypeTV,
+		},
+		{
+			"Odin browser -> tv (6.5.2)",
+			"Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Odin/1.2",
+			DeviceTypeTV,
+		},
 	}
 
 	for _, c := range cases {

@@ -133,6 +133,10 @@ func (o *OS) Parse(ua string, hints *ClientHints) (*OSResult, error) {
 			}
 		}
 
+		if name == "Puffin OS" {
+			version = uaVersion
+		}
+
 		// When the CH name is the UA name's family, the UA name is more detailed.
 		if uaName != name && osFamilyOf(uaName) == name {
 			name = uaName
@@ -254,8 +258,12 @@ func osApplyClientHintMapping(name string) string {
 	switch strings.ToLower(name) {
 	case "linux":
 		return "GNU/Linux"
-	case "macos":
+	case "macos", "mac os x", "macintel":
 		return "Mac"
+	case "cloud phone 2.4":
+		return "Puffin OS"
+	case "win32":
+		return "Windows"
 	default:
 		return name
 	}
